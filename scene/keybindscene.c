@@ -18,13 +18,13 @@ static const char *actions[] = {
 
 
 Scene *New_KeyBindScene(int label) {
-    KeyBindScene *k   = malloc(sizeof(*k));
-    Scene        *scn = New_Scene(label);
+    KeyBindScene *k = malloc(sizeof(*k));
+    Scene *scn = New_Scene(label);
 
-    k->font            = al_load_ttf_font("assets/font/pirulen.ttf", 20, 0);
-    k->x               = WIDTH  / 2;
-    k->y               = HEIGHT / 2 - 100;
-    k->selected        = 0;
+    k->font = al_load_ttf_font("assets/font/pirulen.ttf", 20, 0);
+    k->x = WIDTH  / 2;
+    k->y = HEIGHT / 2 - 100;
+    k->selected = 0;
     k->waiting_for_key = false;
 
     // initialize defaults:

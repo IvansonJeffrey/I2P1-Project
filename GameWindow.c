@@ -108,6 +108,7 @@ void game_init(Game *self)
     // Create display
     self->display = al_create_display(WIDTH, HEIGHT);
     GAME_ASSERT(self->display, "failed to create display.");
+    display = self->display;
     // Create first scene
     create_scene(Menu_L);
     // create event queue

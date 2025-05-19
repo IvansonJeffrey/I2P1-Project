@@ -3,6 +3,8 @@
 #include "gamescene.h"
 #include "keybindscene.h"
 #include "optionscene.h"
+#include "resolutionscene.h"
+#include "brightnessscene.h"
 Scene *scene = NULL;
 void create_scene(SceneType type)
 {
@@ -17,9 +19,12 @@ void create_scene(SceneType type)
     case OptionsScene_L:
         scene = New_OptionsScene(OptionsScene_L);
         break;
-    case KeyBindScene_L:
-        scene = New_KeyBindScene(type);
+    case ResolutionScene_L:
+        scene = New_ResolutionScene(type);
         break;
+    case BrightnessScene_L:
+        scene = New_BrightnessScene(type);
+         break;
     case Exit_L:
         break;
     default:
