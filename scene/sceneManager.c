@@ -19,6 +19,9 @@ void create_scene(SceneType type)
     case OptionsScene_L:
         scene = New_OptionsScene(OptionsScene_L);
         break;
+    case KeyBindScene_L:
+        scene = New_KeyBindScene(type);  
+        break;
     case ResolutionScene_L:
         scene = New_ResolutionScene(type);
         break;

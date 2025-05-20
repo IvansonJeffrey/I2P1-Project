@@ -29,9 +29,6 @@ Scene *New_OptionsScene(int label) {
     o->down_prev  = key_state[ALLEGRO_KEY_DOWN];
     o->enter_prev = key_state[ALLEGRO_KEY_ENTER];
 
-
-    o->enter_prev = false;
-
     scn->pDerivedObj = o;
     scn->Update      = options_update;
     scn->Draw        = options_draw;
@@ -40,20 +37,19 @@ Scene *New_OptionsScene(int label) {
 }
 
 void options_update(Scene *self) {
-    OptionsScene *o = self->pDerivedObj;
+    OptionsScene *o = (OptionsScene*)self->pDerivedObj;
 
     // Navigate the four main options once per key‐press:
-    static bool up_prev = false, down_prev = false;
     bool up   = key_state[ALLEGRO_KEY_UP];
     bool down = key_state[ALLEGRO_KEY_DOWN];
 
-    if (up && !up_prev)
+    if (up && !o->up_prev)
         o->selected_main = (o->selected_main + MAIN_COUNT - 1) % MAIN_COUNT;
-    if (down && !down_prev)
+    if (down && !o->down_prev)
         o->selected_main = (o->selected_main + 1) % MAIN_COUNT;
 
-    up_prev   = up;
-    down_prev = down;
+    o->up_prev   = up;
+    o->down_prev = down;
 
     bool enter = key_state[ALLEGRO_KEY_ENTER];
     if (enter && !o->enter_prev) {
@@ -66,15 +62,6 @@ void options_update(Scene *self) {
         }
     }
     o->enter_prev = enter;
-
-    // On Enter, dispatch:
-    if (key_state[ALLEGRO_KEY_ENTER]) {
-        self->scene_end = true;
-        switch (o->selected_main) {
-            case 0:  window = KeyBindScene_L; break;
-            default: window = Menu_L; break;
-        }
-    }
 }
 
 void options_draw(Scene *self) {
