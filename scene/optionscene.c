@@ -14,11 +14,6 @@ static const char *main_items[] = {
 };
 #define MAIN_COUNT (sizeof(main_items)/sizeof(*main_items))
 
-typedef struct {
-    ALLEGRO_FONT *font;
-    int x, y;
-    int selected_main;
-} OptionsScene;
 
 Scene *New_OptionsScene(int label) {
     OptionsScene *o= malloc(sizeof(*o));
@@ -28,6 +23,14 @@ Scene *New_OptionsScene(int label) {
     o->x = WIDTH  / 2;
     o->y= HEIGHT / 2 - 60;
     o->selected_main  = 0;
+
+    // record the current key_state so we don't fire on an already-held key
+    o->up_prev    = key_state[ALLEGRO_KEY_UP];
+    o->down_prev  = key_state[ALLEGRO_KEY_DOWN];
+    o->enter_prev = key_state[ALLEGRO_KEY_ENTER];
+
+
+    o->enter_prev = false;
 
     scn->pDerivedObj = o;
     scn->Update      = options_update;
@@ -52,12 +55,24 @@ void options_update(Scene *self) {
     up_prev   = up;
     down_prev = down;
 
+    bool enter = key_state[ALLEGRO_KEY_ENTER];
+    if (enter && !o->enter_prev) {
+        self->scene_end = true;
+        switch (o->selected_main) {
+            case 0: window = KeyBindScene_L; break;
+            case 1: window = ResolutionScene_L; break;
+            case 2: window = BrightnessScene_L; break;
+            default: window = Menu_L;        break;
+        }
+    }
+    o->enter_prev = enter;
+
     // On Enter, dispatch:
     if (key_state[ALLEGRO_KEY_ENTER]) {
         self->scene_end = true;
         switch (o->selected_main) {
-            case 0:  window = KeyBindScene_L;   break;
-            default: window = Menu_L;            break;
+            case 0:  window = KeyBindScene_L; break;
+            default: window = Menu_L; break;
         }
     }
 }

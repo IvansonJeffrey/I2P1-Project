@@ -108,13 +108,25 @@ void game_init(Game *self)
     // Create display
     self->display = al_create_display(WIDTH, HEIGHT);
     GAME_ASSERT(self->display, "failed to create display.");
+    display = self->display;
     // Create first scene
     create_scene(Menu_L);
     // create event queue
     event_queue = al_create_event_queue();
     GAME_ASSERT(event_queue, "failed to create event queue.");
     // Initialize Allegro settings
-    al_set_window_position(self->display, 0, 0);
+
+    ALLEGRO_MONITOR_INFO mi;
+    al_get_monitor_info(0, &mi);  
+
+    int screen_w = mi.x2 - mi.x1;
+    int screen_h = mi.y2 - mi.y1;
+
+    int win_x = mi.x1 + (screen_w  - WIDTH)  / 2;
+    int win_y = mi.y1 + (screen_h - HEIGHT) / 2;
+    al_set_window_position(self->display, win_x, win_y);
+
+    //al_set_window_position(self->display, 0, 0);
     al_set_window_title(self->display, self->title);
     // Register event
     al_register_event_source(event_queue, al_get_display_event_source(self->display)); // register display event
