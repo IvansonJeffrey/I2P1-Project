@@ -1,11 +1,13 @@
 #include "sceneManager.h"
 #include "menu.h"
-#include "gamescene.h"
+#include "game.h"
 #include "keybindscene.h"
 #include "optionscene.h"
 #include "resolutionscene.h"
 #include "brightnessscene.h"
+
 Scene *scene = NULL;
+
 void create_scene(SceneType type)
 {
     switch (type)
@@ -13,20 +15,26 @@ void create_scene(SceneType type)
     case Menu_L:
         scene = New_Menu(Menu_L);
         break;
+
     case GameScene_L:
-        scene = New_GameScene(GameScene_L);
+        scene = I2P_NewGameScene(GameScene_L);
         break;
+
     case OptionsScene_L:
         scene = New_OptionsScene(OptionsScene_L);
         break;
+
     case ResolutionScene_L:
         scene = New_ResolutionScene(type);
         break;
+
     case BrightnessScene_L:
         scene = New_BrightnessScene(type);
-         break;
+        break;
+
     case Exit_L:
         break;
+
     default:
         break;
     }

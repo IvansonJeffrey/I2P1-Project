@@ -15,3 +15,10 @@ Point mouse;
 bool debug_mode = true;
 ALLEGRO_DISPLAY *display = NULL;
 int brightness = 100;
+
+float player_x     = 0.0f;      // start at world‐origin (0,0)
+float player_y     = 0.0f;
+float player_speed = 200.0f;    // 200 pixels/second
+
+float cam_x = 0.0f;             // camera top-left in world coords
+float cam_y = 0.0f;

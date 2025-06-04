@@ -27,4 +27,17 @@ extern bool debug_mode;
 extern int brightness;
 extern ALLEGRO_DISPLAY *display;
 
+
+extern float player_x;      // player’s world X position
+extern float player_y;      // player’s world Y position
+extern float player_speed;  // pixels per second
+
+extern float cam_x;         // camera’s top-left X in world coords
+extern float cam_y;         // camera’s top-left Y in world coords
+
+// Tile / chunk sizes:
+#define CHUNK_SIZE    512    // each “chunk” is 512×512 pixels
+
+// Number of object types (fences, pillars, plants, trees):
+#define MAX_OBJ_TYPES 10
 #endif

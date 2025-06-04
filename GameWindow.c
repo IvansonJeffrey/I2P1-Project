@@ -57,8 +57,8 @@ void execute(Game *self)
             {
                 KeyBindScene *k = (KeyBindScene*) scene->pDerivedObj;
                 if (k->waiting_for_key) {
-                    k->keymap[k->selected]   = event.keyboard.keycode;
-                    k->waiting_for_key       = false;
+                    k->keymap[k->selected]  = event.keyboard.keycode;
+                    k->waiting_for_key = false;
                     break;
                 }
             }
@@ -109,8 +109,10 @@ void game_init(Game *self)
     self->display = al_create_display(WIDTH, HEIGHT);
     GAME_ASSERT(self->display, "failed to create display.");
     display = self->display;
+
+    al_set_blender(ALLEGRO_ADD, ALLEGRO_ALPHA, ALLEGRO_INVERSE_ALPHA);
     // Create first scene
-    create_scene(Menu_L);
+    create_scene(GameScene_L);
     // create event queue
     event_queue = al_create_event_queue();
     GAME_ASSERT(event_queue, "failed to create event queue.");
