@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <math.h>
 
+#define M_PI 3.14159265358979323846f
+
 typedef struct {
     int         type;
     float       world_x, world_y;
@@ -129,8 +131,15 @@ Scene *I2P_NewGameScene(int label) {
         // Store in our array:
         gs->object_tiles[i] = bmp;
     }
-
     
+    gs->bat_sprite    = al_load_bitmap("assets/tilesets/bat.png");
+    GAME_ASSERT(gs->bat_sprite, "Could not load assets/tilesets/bat.png\n");
+
+    gs->num_bats      = 0;          // no bats yet
+    gs->spawn_timer   = 0.0f;       // start counting from zero
+    gs->elapsed_time  = 0.0f;       // total time = 0
+    gs->spawn_interval = 2.0f;      // spawn first bat after 5 seconds
+
     // 4) Initialize global player position & camera:
     player_x = 0.0f;
     player_y = 0.0f;
@@ -229,6 +238,55 @@ void I2P_game_scene_update(Scene *self) {
     // 5) Recenter camera on player
     cam_x = player_x - (WIDTH  / 2.0f);
     cam_y = player_y - (HEIGHT / 2.0f);
+
+    gs->elapsed_time += dt;
+    gs->spawn_timer  += dt;
+
+    // We’ll *reduce* spawn_interval over time so bats come faster.
+    // For example, every 30 sec we reduce by 0.5 sec down to a min of 1.0 sec.
+    {
+        float min_interval = 1.0f; 
+        float max_interval = 5.0f; 
+        // Simple linear reduction: after 60s, interval = min_interval.
+        float t = gs->elapsed_time;
+        float frac = t / 60.0f;
+        if (frac > 1.0f) frac = 1.0f;
+        gs->spawn_interval = max_interval - (max_interval - min_interval) * frac;
+    }
+
+    // If it’s time to spawn a new bat:f
+    if (gs->spawn_timer >= gs->spawn_interval && gs->num_bats < MAX_BATS) {
+        // Reset spawn timer:
+        gs->spawn_timer -= gs->spawn_interval;
+
+        // Pick a random direction (angle) around the player:
+        float angle = ((float)rand() / RAND_MAX) * (2.0f * M_PI);
+        // We want the bat to appear **outside** SAFE_RADIUS but not too far:
+        float spawn_dist = SAFE_RADIUS + ((float)rand() / RAND_MAX) * (SPAWN_RADIUS - SAFE_RADIUS);
+        float bx = player_x + cosf(angle) * spawn_dist;
+        float by = player_y + sinf(angle) * spawn_dist;
+
+        // Add a new bat at (bx, by):
+        int idx = gs->num_bats++;
+        gs->bats[idx].x     = bx;
+        gs->bats[idx].y     = by;
+        gs->bats[idx].speed = 100.0f;  // or whatever speed you like
+    }
+
+    for (int i = 0; i < gs->num_bats; i++) {
+        Bat *bat = &gs->bats[i];
+        // Compute vector from bat → player:
+        float vx = player_x - bat->x;
+        float vy = player_y - bat->y;
+        float dist = sqrtf(vx*vx + vy*vy);
+        if (dist > 0.0f) {
+            // Normalize and step by bat->speed * dt
+            float inv = 1.0f / dist;
+            bat->x += vx * inv * bat->speed * dt;
+            bat->y += vy * inv * bat->speed * dt;
+        }
+        // If dist==0, bat is exactly at player—do nothing (or you could set a "hit" flag).
+    }
 }
 
 void I2P_game_scene_draw(Scene *self) {
