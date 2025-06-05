@@ -211,17 +211,19 @@ void I2P_game_scene_update(Scene *self) {
         dy *= 0.7071067f;
     }
 
-    // 3) Tentative new position
-    float nx = player_x + dx;
-    float ny = player_y + dy;
-
-    // 4) Check centered‐circle collisions:
+    
     I2P_GameScene *gs = (I2P_GameScene *)self->pDerivedObj;
-    if (!I2P_check_collision(nx, ny, gs)) {
-        // No collision ⇒ commit the move
-        player_x = nx;
-        player_y = ny;
+   
+   float try_x = player_x + dx;
+   float try_y = player_y + dy;
+   if (!I2P_check_collision(try_x, player_y, gs)) {
+        player_x = try_x;
+   }
+   if (!I2P_check_collision(player_x, try_y, gs)) {
+        player_y = try_y;
     }
+
+   
     // else: collision ⇒ do not move
 
     // 5) Recenter camera on player
