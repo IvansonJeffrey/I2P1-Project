@@ -2,6 +2,8 @@
 #define GLOBAL_H_INCLUDED
 #include <stdio.h>
 #include <allegro5/allegro.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_ttf.h>
 #define GAME_TERMINATE -1
 #include "shapes/Point.h"
 #define debug(x)                                                            \
@@ -27,10 +29,13 @@ extern bool debug_mode;
 extern int brightness;
 extern ALLEGRO_DISPLAY *display;
 
+extern ALLEGRO_FONT  *health_font;
 
 extern float player_x;      // player’s world X position
 extern float player_y;      // player’s world Y position
 extern float player_speed;  // pixels per second
+
+extern int   player_health; // player’s health (starts at 150)
 
 extern float cam_x;         // camera’s top-left X in world coords
 extern float cam_y;         // camera’s top-left Y in world coords

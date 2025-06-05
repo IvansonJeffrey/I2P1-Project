@@ -273,6 +273,16 @@ void I2P_game_scene_draw(Scene *self) {
     al_draw_circle(px, py, 16.0f, al_map_rgb(0, 0, 0), 2.0f);
 
     bats_draw();
+
+    {
+        char buf[32];
+        sprintf(buf, "%d / 150", player_health);
+        // Y‐position: a 2-pixel margin above the bottom edge
+        int text_x = 5;
+        int text_y = HEIGHT - (40 + 2);
+        al_draw_text(health_font, al_map_rgb(255, 0, 0), text_x, text_y, 0, buf);
+    }
+
     al_flip_display();
 }
 

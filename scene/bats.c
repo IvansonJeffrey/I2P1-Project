@@ -3,6 +3,7 @@
 #include "../GAME_ASSERT.h"
 #include <stdlib.h>    // rand(), srand(), RAND_MAX
 #include <math.h>      // floorf(), sqrtf(), cosf(), sinf()
+#include "../global.h"
 
 // Internal storage (static)
 static ALLEGRO_BITMAP *bat_sprite = NULL;
@@ -72,6 +73,44 @@ void bats_update(float dt) {
             float inv = 1.0f / dist;
             bats[i].x += vx * inv * bats[i].speed * dt;
             bats[i].y += vy * inv * bats[i].speed * dt;
+        }
+    }
+
+    if (bat_sprite) {
+        int bw = al_get_bitmap_width(bat_sprite);
+        int bh = al_get_bitmap_height(bat_sprite);
+        float bat_radius = (bw < bh ? bw : bh) * 0.5f / 2.0f; 
+        // Note: /2.0f because we drew bat with its center, but original code draws
+        // bat_sprite with bat’s center at (x - bw/2, y - bh/2). So half of half‐dimension.
+        // If you want a slightly smaller collision area, leave it as is; otherwise, you
+        // can just use max(bw,bh)*0.5f.
+
+        const float player_radius = 16.0f;  
+        const float sum_r = player_radius + bat_radius;
+        const float sum_r2 = sum_r * sum_r;
+
+        for (int i = 0; i < num_bats; ) {
+            float dx = bats[i].x - player_x;
+            float dy = bats[i].y - player_y;
+            if ((dx * dx + dy * dy) <= sum_r2) {
+                // Collision detected!
+                player_health--;
+                printf("Player hit by a bat!  Health now: %d\n", player_health);
+
+                bats[i] = bats[num_bats - 1];
+                num_bats--;
+                
+                // If health is zero or below, immediately terminate the program:
+                if (player_health <= 0) {
+                    printf("Game Over!\n");
+                    fflush(stdout);
+                    exit(0);
+                }
+                // Note: do NOT increment i, because we swapped in a new bat at index i.
+                continue;
+            }
+            // no collision: move on to next bat
+            i++;
         }
     }
 }

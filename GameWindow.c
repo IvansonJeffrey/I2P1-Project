@@ -99,6 +99,10 @@ void game_init(Game *self)
     addon_init &= al_init_primitives_addon();
     addon_init &= al_init_font_addon();   // initialize the font addon
     addon_init &= al_init_ttf_addon();    // initialize the ttf (True Type Font) addon
+
+    health_font = al_load_ttf_font("assets/font/PixelPurl.ttf", 40, 0);
+    GAME_ASSERT(health_font, "Failed to load health font at assets/font.ttf\n");
+
     addon_init &= al_init_image_addon();  // initialize the image addon
     addon_init &= al_init_acodec_addon(); // initialize acodec addon
     addon_init &= al_install_keyboard();  // install keyboard event
