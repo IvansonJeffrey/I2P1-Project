@@ -287,6 +287,7 @@ void I2P_game_scene_draw(Scene *self) {
 }
 
 void I2P_game_scene_destroy(Scene *self) {
+
     I2P_GameScene *gs = (I2P_GameScene *)self->pDerivedObj;
     if (!gs) return;
 

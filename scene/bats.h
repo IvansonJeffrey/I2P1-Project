@@ -12,16 +12,17 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
-// A single bat moves straight toward the player (ignoring obstacles):
 typedef struct {
     float x, y;    // world coordinates
     float speed;   // pixels per second
 } Bat;
 
-// Public API for the “bat subsystem”:
 void bats_init(void);
 void bats_update(float dt);
 void bats_draw(void);
 void bats_destroy(void);
+
+int bats_get_count(void);
+void bats_cheat_spawn(int count);
 
 #endif // BATS_H_INCLUDED

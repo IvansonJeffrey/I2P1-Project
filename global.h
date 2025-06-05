@@ -35,7 +35,9 @@ extern float player_x;      // player’s world X position
 extern float player_y;      // player’s world Y position
 extern float player_speed;  // pixels per second
 
-extern int   player_health; // player’s health (starts at 150)
+extern int  player_health; // player’s health (starts at 150)
+extern bool player_invincible; 
+extern int game_score;
 
 extern float cam_x;         // camera’s top-left X in world coords
 extern float cam_y;         // camera’s top-left Y in world coords

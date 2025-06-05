@@ -14,6 +14,7 @@
 #include "scene/sceneManager.h"
 #include "scene/keybindscene.h"
 #include <stdbool.h>
+#include "scene/bats.h"
 
 Game *New_Game()
 {
@@ -52,6 +53,19 @@ void execute(Game *self)
         case ALLEGRO_EVENT_KEY_DOWN:
         {
             key_state[event.keyboard.keycode] = true;
+
+            if (event.keyboard.keycode == ALLEGRO_KEY_C) {
+                player_invincible = !player_invincible;
+                printf("*** Cheat: Invincibility %s ***\n",
+                    player_invincible ? "ON" : "OFF");
+                break;
+            }
+
+            if (event.keyboard.keycode == ALLEGRO_KEY_QUOTE) {
+                printf("*** Cheat: Spawning 100 bats around you ***\n");
+                bats_cheat_spawn(100);
+                break;
+            }
 
             if (window == KeyBindScene_L ) 
             {
@@ -101,7 +115,7 @@ void game_init(Game *self)
     addon_init &= al_init_ttf_addon();    // initialize the ttf (True Type Font) addon
 
     health_font = al_load_ttf_font("assets/font/PixelPurl.ttf", 40, 0);
-    GAME_ASSERT(health_font, "Failed to load health font at assets/font.ttf\n");
+    GAME_ASSERT(health_font, "Failed to load health font at assets/font/PixelPurl.ttf\n");
 
     addon_init &= al_init_image_addon();  // initialize the image addon
     addon_init &= al_init_acodec_addon(); // initialize acodec addon

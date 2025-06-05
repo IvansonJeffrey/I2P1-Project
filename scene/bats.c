@@ -13,21 +13,33 @@ static float spawn_timer = 0.0f;
 static float spawn_interval = 2.0f;
 static float elapsed_time = 0.0f;
 
-static int fib(int n) {
-    if (n <= 1) return 1;   // treat fib(0)=1, fib(1)=1 for our “shifted” sequence
-    return fib(n - 1) + fib(n - 2);
-}
-
 
 // Initialize bat subsystem: load sprite and set timers
 void bats_init(void) {
     bat_sprite = al_load_bitmap("assets/tilesets/bat.png");
     GAME_ASSERT(bat_sprite, "Could not load assets/tilesets/bat.png\n");
     num_bats       = 0;
-    spawn_interval = 2.0f;       // first wave at 2s
+    spawn_interval = 2.0f;  
     spawn_timer    = spawn_interval;
     elapsed_time   = 0.0f;
 }
+
+void bats_cheat_spawn(int count) {
+    for (int i = 0; i < count && num_bats < MAX_BATS; i++) {
+       // Spread evenly or randomly? We'll randomize the angle:
+        float angle = ((float)rand() / (float)RAND_MAX) * (2.0f * M_PI);
+        float spawn_dist = SAFE_RADIUS; 
+        // Place exactly on the invisible circle (no extra random radius)
+        float bx = player_x + cosf(angle) * spawn_dist;
+        float by = player_y + sinf(angle) * spawn_dist;
+
+        bats[num_bats].x = bx;
+        bats[num_bats].y = by;
+        bats[num_bats].speed = 100.0f;  
+        num_bats++;
+    }
+}
+
 
 // Update bats each frame: spawn new waves (Fibonacci) and move toward player
 void bats_update(float dt) {
@@ -38,30 +50,23 @@ void bats_update(float dt) {
     int minute_index = (int)(elapsed_time / 60.0f);
     if (minute_index < 0) minute_index = 0;
     
-    int n = minute_index + 2;
-    if (n > 11) n = 11;
-    int spawn_count = fib(n);
+    int spawn_count = 2 * (minute_index + 1);
 
     // Spawn a wave if it’s time
     if (spawn_timer >= spawn_interval) {
         spawn_timer -= spawn_interval;
 
-        spawn_interval = 2.0f + ((float)rand() / (float)RAND_MAX) * 1.0f;
-
         for (int k = 0; k < spawn_count && num_bats < MAX_BATS; k++) {
-            // Random angle [0,2π)
             float angle = ((float)rand() / (float)RAND_MAX) * (2.0f * M_PI);
-            // Random distance ∈ [SAFE_RADIUS, SPAWN_RADIUS]
-            float spawn_dist = SAFE_RADIUS +
-                ((float)rand() / (float)RAND_MAX) * (SPAWN_RADIUS - SAFE_RADIUS);
+            float spawn_dist = SAFE_RADIUS + ((float)rand() / (float)RAND_MAX) * (SPAWN_RADIUS - SAFE_RADIUS);
             float bx = player_x + cosf(angle) * spawn_dist;
             float by = player_y + sinf(angle) * spawn_dist;
 
             bats[num_bats].x = bx;
             bats[num_bats].y = by;
-            bats[num_bats].speed = 100.0f;  // pixels/sec
+            bats[num_bats].speed = 100.0f;     // pixels/sec
             num_bats++;
-        }
+       }
     }
 
     // Move all active bats straight toward the player
@@ -90,26 +95,43 @@ void bats_update(float dt) {
         const float sum_r2 = sum_r * sum_r;
 
         for (int i = 0; i < num_bats; ) {
+            // 1) Compute vector from player to this bat:
             float dx = bats[i].x - player_x;
             float dy = bats[i].y - player_y;
-            if ((dx * dx + dy * dy) <= sum_r2) {
-                // Collision detected!
-                player_health--;
-                printf("Player hit by a bat!  Health now: %d\n", player_health);
 
-                bats[i] = bats[num_bats - 1];
-                num_bats--;
-                
-                // If health is zero or below, immediately terminate the program:
-                if (player_health <= 0) {
-                    printf("Game Over!\n");
-                    fflush(stdout);
-                    exit(0);
+            // 2) Check circle vs circle overlap
+            if ((dx * dx + dy * dy) <= sum_r2) {
+                if (!player_invincible) {
+                    // a) Damage the player and remove the bat
+                    player_health--;
+                    printf("Player hit by a bat!  Health now: %d\n", player_health);
+
+                    if (player_health <= 0) {
+                        // Game Over: print score (0 for now) and exit
+                        printf("\nGame Over!\nScore: %d\n", game_score);
+                        fflush(stdout);
+                        exit(0);
+                    }
+
+                    // Remove the bat by swapping with last
+                    bats[i] = bats[num_bats - 1];
+                    num_bats--;
+                    // do NOT i++ because we just swapped another bat into index i
+                    continue;
+                } else {
+                    // b) Player is invincible → push bat just outside collision radius
+                    float dist_actual = sqrtf(dx * dx + dy * dy);
+                    if (dist_actual > 0.0f) {
+                        float push_factor = sum_r / dist_actual;
+                        bats[i].x = player_x + dx * push_factor;
+                        bats[i].y = player_y + dy * push_factor;
+                    }
+                    // Then advance to next bat:
+                    i++;
+                    continue;
                 }
-                // Note: do NOT increment i, because we swapped in a new bat at index i.
-                continue;
             }
-            // no collision: move on to next bat
+            // No collision → move on
             i++;
         }
     }
@@ -134,4 +156,8 @@ void bats_destroy(void) {
         bat_sprite = NULL;
     }
     num_bats = 0;
+}
+
+int bats_get_count(void) {
+    return num_bats;
 }
