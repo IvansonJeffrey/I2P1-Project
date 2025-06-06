@@ -276,7 +276,7 @@ void I2P_game_scene_draw(Scene *self) {
 
     {
         char buf[32];
-        sprintf(buf, "%d / 150", player_health);
+        sprintf(buf, "%d / 150 HP", player_health);
         // Y‐position: a 2-pixel margin above the bottom edge
         int text_x = 5;
         int text_y = HEIGHT - (40 + 2);
