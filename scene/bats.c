@@ -43,6 +43,12 @@ void bats_cheat_spawn(int count) {
 
 // Update bats each frame: spawn new waves (Fibonacci) and move toward player
 void bats_update(float dt) {
+
+    if(player_is_dead)
+    {
+        return;
+    }
+    
     elapsed_time += dt;
     spawn_timer  += dt;
 
@@ -107,10 +113,17 @@ void bats_update(float dt) {
                     printf("Player hit by a bat!  Health now: %d\n", player_health);
 
                     if (player_health <= 0) {
-                        // Game Over: print score (0 for now) and exit
+                        player_health = 0;
+                        player_is_dead = true;
+                        death_timer = 0.0f;
+                        death_current_frame = 0;
+
+
                         printf("\nGame Over!\nScore: %d\n", game_score);
                         fflush(stdout);
-                        exit(0);
+                        
+                        
+                        return;
                     }
 
                     // Remove the bat by swapping with last

@@ -21,6 +21,14 @@ static bool player_is_moving(float dx, float dy) {
     return (dx != 0.0f || dy != 0.0f);
 }
 
+#define DEATH_FRAME_COUNT 8
+ALLEGRO_BITMAP *death_frames[DEATH_FRAME_COUNT] = { NULL };
+bool player_is_dead = false;
+float death_timer = 0.0f;
+int death_current_frame = 0;
+const float death_duration = 2.0f;
+const float death_frame_interval = death_duration / (float)DEATH_FRAME_COUNT;
+
 typedef struct {
     int         type;
     float       world_x, world_y;
@@ -150,6 +158,13 @@ Scene *I2P_NewGameScene(int label) {
         player_frames[i] = al_load_bitmap(path);
         GAME_ASSERT(player_frames[i], "Failed to load player walk frame: %s\n", path);
     }
+
+    for (int i = 0; i < DEATH_FRAME_COUNT; i++) {
+        char dpath[64];
+        sprintf(dpath, "assets/image/death%d.png", i + 1);
+        death_frames[i] = al_load_bitmap(dpath);
+        GAME_ASSERT(death_frames[i], "Failed to load death frame: %s\n", dpath);
+    }
     
     // 4) Initialize global player position & camera:
     player_x = 0.0f;
@@ -217,6 +232,24 @@ static bool I2P_check_collision(float cx, float cy, I2P_GameScene *gs) {
 void I2P_game_scene_update(Scene *self) {
     (void)self;
     float dt = 1.0f / FPS;
+
+    if (player_is_dead) {
+        // Advance the death‐animation timer
+        death_timer += dt;
+
+        // Which frame should we show? Clamp to last frame once we exceed DEATH_FRAME_COUNT
+        int frame_index = (int)(death_timer / death_frame_interval);
+        if (frame_index < DEATH_FRAME_COUNT) {
+            death_current_frame = frame_index;
+        } else {
+            death_current_frame = DEATH_FRAME_COUNT - 1;
+        }
+
+        if (death_timer >= death_duration) {
+            exit(0);
+        }
+        return;
+    }
 
     // 1) Movement delta from input
     float dx = 0.0f, dy = 0.0f;
@@ -295,12 +328,25 @@ void I2P_game_scene_draw(Scene *self) {
         }
     }
 
-    ALLEGRO_BITMAP *frame = player_frames[player_current_frame];    
-    int fw = al_get_bitmap_width(frame);
-    int fh = al_get_bitmap_height(frame);
-    float draw_x = (player_x - cam_x) - (fw / 2.0f);
-    float draw_y = (player_y - cam_y) - (fh / 2.0f);
-    al_draw_bitmap(frame, draw_x, draw_y, 0);
+    if (player_is_dead) {
+        // Draw the death animation frame instead of the walking/idle frame:
+        ALLEGRO_BITMAP *dframe = death_frames[death_current_frame];
+        int dw = al_get_bitmap_width(dframe);
+        int dh = al_get_bitmap_height(dframe);
+        // Center it on (player_x, player_y):
+        float ddx = (player_x - cam_x) - (dw / 2.0f);
+        float ddy = (player_y - cam_y) - (dh / 2.0f);
+        al_draw_bitmap(dframe, ddx, ddy, 0);
+    }
+    else {
+        ALLEGRO_BITMAP *frame = player_frames[player_current_frame];    
+        int fw = al_get_bitmap_width(frame);
+        int fh = al_get_bitmap_height(frame);
+        float draw_x = (player_x - cam_x) - (fw / 2.0f);
+        float draw_y = (player_y - cam_y) - (fh / 2.0f);
+        al_draw_bitmap(frame, draw_x, draw_y, 0);
+    }
+
 
     bats_draw();
 
@@ -336,6 +382,13 @@ void I2P_game_scene_destroy(Scene *self) {
         if (player_frames[i]) {
             al_destroy_bitmap(player_frames[i]);
             player_frames[i] = NULL;
+        }
+    }
+
+    for (int i = 0; i < DEATH_FRAME_COUNT; i++) {
+        if (death_frames[i]) {
+            al_destroy_bitmap(death_frames[i]);
+            death_frames[i] = NULL;
         }
     }
 
