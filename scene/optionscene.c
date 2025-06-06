@@ -60,8 +60,6 @@ void options_update(Scene *self) {
         self->scene_end = true;
         switch (o->selected_main) {
             case 0: window = KeyBindScene_L; break;
-            case 1: window = ResolutionScene_L; break;
-            case 2: window = BrightnessScene_L; break;
             default: window = Menu_L;        break;
         }
     }

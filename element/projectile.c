@@ -1,99 +1,118 @@
 #include "projectile.h"
-#include "tree.h"
 #include "../shapes/Circle.h"
 #include "../scene/gamescene.h" // for element label
 #include "../scene/sceneManager.h" // for scene variable
+#include <allegro5/allegro_primitives.h>
+#include "../scene/bats.h"
+#include <stdlib.h>
+#include <math.h>
+
 /*
    [Projectile function]
 */
-Elements *New_Projectile(int label, int x, int y, int v)
+Elements *New_Projectile(int label, float x, float y, float dirx, float diry)
 {
     Projectile *pDerivedObj = (Projectile *)malloc(sizeof(Projectile));
     Elements *pObj = New_Elements(label);
-    // setting derived object member
-    pDerivedObj->img = al_load_bitmap("assets/image/projectile.png");
-    pDerivedObj->width = al_get_bitmap_width(pDerivedObj->img);
-    pDerivedObj->height = al_get_bitmap_height(pDerivedObj->img);
-    pDerivedObj->x = x;
-    pDerivedObj->y = y;
-    pDerivedObj->v = v;
-    pDerivedObj->hitbox = New_Circle(pDerivedObj->x + pDerivedObj->width / 2,
-                                     pDerivedObj->y + pDerivedObj->height / 2,
-                                     min(pDerivedObj->width, pDerivedObj->height) / 2);
-    // setting the interact object
-    pObj->inter_obj[pObj->inter_len++] = Tree_L;
-    pObj->inter_obj[pObj->inter_len++] = Floor_L;
-    // setting derived object function
+
+    // We expect caller to pass dirx,diry as a normalized unit vector * 500 px/sec
+    // Note: in the new signature (label,x,y,dirx,diry), 'x' & 'y' are center‐coords
+    //       But original was top‐left—so we will treat them as center.
+
+    // Build a circle hitbox of radius 4 px:
+    pDerivedObj->x = (float)x;
+    pDerivedObj->y = (float)y;
+    pDerivedObj->dx = dirx * 500.0f;  // constant speed = 500 px/sec
+    pDerivedObj->dy = diry * 500.0f;
+    pDerivedObj->hitbox = New_Circle(pDerivedObj->x,
+                                     pDerivedObj->y,
+                                     4.0f /* radius */);
+    // No Tree or Floor collision anymore (we only care about bats going off‐screen).
+    // Setting derived object function pointers:
     pObj->pDerivedObj = pDerivedObj;
-    pObj->Update = Projectile_update;
+    pObj->Update  = Projectile_update;
     pObj->Interact = Projectile_interact;
-    pObj->Draw = Projectile_draw;
-    pObj->Destroy = Projectile_destory;
+    pObj->Draw    = Projectile_draw;
+    pObj->Destroy = Projectile_destroy;
 
     return pObj;
+
 }
+
+
 void Projectile_update(Elements *self)
 {
-    Projectile *Obj = ((Projectile *)(self->pDerivedObj));
-    _Projectile_update_position(self, Obj->v, 0);
+     Projectile *Obj = (Projectile *)(self->pDerivedObj);
+    float dt = 1.0f / FPS;
+    float step_x = Obj->dx * dt;
+    float step_y = Obj->dy * dt;
+
+    Obj->x += step_x;
+    Obj->y += step_y;
+
+    Obj->hitbox->update_center_x(Obj->hitbox, step_x);
+    Obj->hitbox->update_center_y(Obj->hitbox, step_y);
+
+    float screen_x = Obj->x - cam_x;
+    float screen_y = Obj->y - cam_y;
+    if (screen_x < -10 || screen_x > WIDTH + 10 ||
+        screen_y < -10 || screen_y > HEIGHT + 10) {
+        self->dele = true;
+        return;
+    }
 }
-void _Projectile_update_position(Elements *self, int dx, int dy)
-{
-    Projectile *Obj = ((Projectile *)(self->pDerivedObj));
-    Obj->x += dx;
-    Obj->y += dy;
-    Shape *hitbox = Obj->hitbox;
-    hitbox->update_center_x(hitbox, dx);
-    hitbox->update_center_y(hitbox, dy);
-}
+
 void Projectile_interact(Elements *self)
 {
-    for (int j = 0; j < self->inter_len; j++)
-    {
-        int inter_label = self->inter_obj[j];
-        ElementVec labelEle = _Get_label_elements(scene, inter_label);
-        for (int i = 0; i < labelEle.len; i++)
-        {
-            if (inter_label == Floor_L)
-            {
-                _Projectile_interact_Floor(self, labelEle.arr[i]);
-            }
-            else if (inter_label == Tree_L)
-            {
-                _Projectile_interact_Tree(self, labelEle.arr[i]);
-            }
+    Projectile *Obj = (Projectile *)(self->pDerivedObj);
+
+    extern Bat* bats_array(void);
+    extern int* bats_count_ptr(void);
+
+    Bat *bat_arr = bats_array();
+    int *bat_cnt = bats_count_ptr();
+    int i = 0;
+    while (i < *bat_cnt) {
+        float bx = bat_arr[i].x;
+        float by = bat_arr[i].y;
+
+        // Compute distance between centers:
+        float dx = Obj->x - bx;
+        float dy = Obj->y - by;
+        // Bat radius: use same logic as bats.c (approx half sprite / 2):
+        const float bat_radius = 16.0f;   // tweak if your bat sprite is bigger/smaller
+        const float proj_radius = 4.0f;
+        float combined = bat_radius + proj_radius;
+
+        if ((dx*dx + dy*dy) <= (combined * combined)) {
+            // Hit!  Remove that bat:
+            bat_arr[i] = bat_arr[*bat_cnt - 1];
+            (*bat_cnt)--;
+
+            // Mark projectile for deletion:
+            self->dele = true;
+
+            // Increment score:
+            game_score++;
+            // Do NOT i++, because we just swapped in a new bat at index i
+            return;
         }
+        i++;
     }
 }
-void _Projectile_interact_Floor(Elements *self, Elements *tar)
-{
-    Projectile *Obj = ((Projectile *)(self->pDerivedObj));
-    if (Obj->x < 0 - Obj->width)
-        self->dele = true;
-    else if (Obj->x > WIDTH + Obj->width)
-        self->dele = true;
-}
-void _Projectile_interact_Tree(Elements *self, Elements *tar)
-{
-    Projectile *Obj = ((Projectile *)(self->pDerivedObj));
-    Tree *tree = ((Tree *)(tar->pDerivedObj));
-    if (tree->hitbox->overlap(tree->hitbox, Obj->hitbox))
-    {
-        self->dele = true;
-    }
-}
+
 void Projectile_draw(Elements *self)
 {
-    Projectile *Obj = ((Projectile *)(self->pDerivedObj));
-    if (Obj->v > 0)
-        al_draw_bitmap(Obj->img, Obj->x, Obj->y, ALLEGRO_FLIP_HORIZONTAL);
-    else
-        al_draw_bitmap(Obj->img, Obj->x, Obj->y, 0);
+    Projectile *Obj = (Projectile *)(self->pDerivedObj);
+    // Draw a filled white circle of radius 4 px at (Obj->x, Obj->y):
+    float sx = Obj->x - cam_x;
+    float sy = Obj->y - cam_y;
+    al_draw_filled_circle(sx, sy, 4.0f, al_map_rgb(255,255,255));
 }
-void Projectile_destory(Elements *self)
+
+void Projectile_destroy(Elements *self)
 {
-    Projectile *Obj = ((Projectile *)(self->pDerivedObj));
-    al_destroy_bitmap(Obj->img);
+    Projectile *Obj = (Projectile *)(self->pDerivedObj);
     free(Obj->hitbox);
     free(Obj);
     free(self);

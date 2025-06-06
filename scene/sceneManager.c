@@ -3,8 +3,6 @@
 #include "game.h"
 #include "keybindscene.h"
 #include "optionscene.h"
-#include "resolutionscene.h"
-#include "brightnessscene.h"
 
 Scene *scene = NULL;
 
@@ -24,18 +22,15 @@ void create_scene(SceneType type)
         scene = New_OptionsScene(OptionsScene_L);
         break;
 
-    case ResolutionScene_L:
-        scene = New_ResolutionScene(type);
-        break;
-
-    case BrightnessScene_L:
-        scene = New_BrightnessScene(type);
-        break;
-
     case Exit_L:
         break;
 
     default:
         break;
     }
+}
+
+void add_element_to_scene(Scene *scenePtr, Elements *ele)
+{
+    _Register_elements(scenePtr, ele);
 }

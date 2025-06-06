@@ -9,9 +9,14 @@
 #include "../scene/gamescene.h"
 #include <stdio.h>
 #include <stdbool.h>
+#include "../scene/bats.h"
+#include "../global.h"
 /*
    [Character function]
 */
+extern float player_facing_dx;
+extern float player_facing_dy;
+
 Elements *New_Character(int label)
 {
     Character *pDerivedObj = (Character *)malloc(sizeof(Character));
@@ -110,17 +115,23 @@ void Character_update(Elements *self)
             Elements *pro;
             if (chara->dir)
             {
-                pro = New_Projectile(Projectile_L,
-                                     chara->x + chara->width - 100,
-                                     chara->y + 10,
-                                     5);
+                pro = New_Projectile(
+                    Projectile_L,
+                    player_x,
+                    player_y,
+                    player_facing_dx,   
+                    player_facing_dy  
+                );
             }
             else
             {
-                pro = New_Projectile(Projectile_L,
-                                     chara->x - 50,
-                                     chara->y + 10,
-                                     -5);
+                pro = New_Projectile(
+                    Projectile_L,
+                    player_x,
+                    player_y,
+                    player_facing_dx,   
+                    player_facing_dy   
+                );
             }
             _Register_elements(scene, pro);
             chara->new_proj = true;

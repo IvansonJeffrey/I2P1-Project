@@ -9,6 +9,10 @@
 #include <stdlib.h>
 #include <math.h>
 #include "bats.h"
+#include "../element/projectile.h"
+#include "sceneManager.h"
+#include "../global.h"
+#include "gamescene.h"
 
 #define M_PI 3.14159265358979323846f
 
@@ -20,6 +24,11 @@ static const float player_frame_interval = 0.10f;  // seconds per frame
 static bool player_is_moving(float dx, float dy) {
     return (dx != 0.0f || dy != 0.0f);
 }
+
+float player_facing_dx = 0.0f;
+float player_facing_dy = -1.0f; 
+
+static float attack_timer = 0.0f;
 
 typedef struct {
     int         type;
@@ -168,7 +177,6 @@ Scene *I2P_NewGameScene(int label) {
 
 static bool I2P_check_collision(float cx, float cy, I2P_GameScene *gs) {
     const float player_radius = 16.0f;
-    const float player_r2     = player_radius * player_radius;
 
     float pmin_x = cx - player_radius;
     float pmax_x = cx + player_radius;
@@ -213,7 +221,6 @@ static bool I2P_check_collision(float cx, float cy, I2P_GameScene *gs) {
 }
 
 
-
 void I2P_game_scene_update(Scene *self) {
     (void)self;
     float dt = 1.0f / FPS;
@@ -226,6 +233,14 @@ void I2P_game_scene_update(Scene *self) {
     if (key_state[ALLEGRO_KEY_D] || key_state[ALLEGRO_KEY_RIGHT]) dx += player_speed * dt;
 
     // 2) Normalize diagonal movement
+    if (dx != 0.0f || dy != 0.0f) {
+        float len = sqrtf(dx*dx + dy*dy);
+        if (len > 0.0f) {
+            player_facing_dx = dx / len;
+            player_facing_dy = dy / len;
+        }
+    }
+
     if (dx != 0.0f && dy != 0.0f) {
         dx *= 0.7071067f;
         dy *= 0.7071067f;
@@ -260,6 +275,31 @@ void I2P_game_scene_update(Scene *self) {
     }
 
     bats_update(dt);
+
+    attack_timer += dt;
+    if (attack_timer >= 1.0f) {
+        Elements *p = New_Projectile(Projectile_L, player_x, player_y, player_facing_dx, player_facing_dy);
+        add_element_to_scene(self, p);
+        attack_timer -= 1.0f;
+    }
+
+    ElementVec allEle = _Get_all_elements(self);
+    //     6b) Run each element’s Update()
+    for (int i = 0; i < allEle.len; i++) {
+        Elements *ele = allEle.arr[i];
+        ele->Update(ele);        // e.g. Projectile_update(ele)
+    }
+    //     6c) Run each element’s Interact() (handles collisions, deletions)
+    for (int i = 0; i < allEle.len; i++) {
+        Elements *ele = allEle.arr[i];
+        ele->Interact(ele);
+    }
+    //     6d) Remove any elements flagged for deletion
+    for (int i = 0; i < allEle.len; i++) {
+        Elements *ele = allEle.arr[i];
+        if (ele->dele)
+            _Remove_elements(self, ele);
+    }
 }
 
 void I2P_game_scene_draw(Scene *self) {
@@ -301,6 +341,50 @@ void I2P_game_scene_draw(Scene *self) {
     float draw_x = (player_x - cam_x) - (fw / 2.0f);
     float draw_y = (player_y - cam_y) - (fh / 2.0f);
     al_draw_bitmap(frame, draw_x, draw_y, 0);
+
+    {
+        // Player’s screen‐space center:
+        float px = player_x - cam_x;
+        float py = player_y - cam_y;
+
+        // Facing unit vector:
+        float dx = player_facing_dx;
+        float dy = player_facing_dy;
+
+        // A perpendicular vector to (dx,dy):
+        float perp_x = -dy;
+        float perp_y = dx;
+
+        // How far out for the “tip”:
+        float tip_dist  = 12.0f;
+        // How wide the base:
+        float base_dist = 4.0f;
+
+        // Tip of the triangle:
+        float tip_x = px + dx * tip_dist;
+        float tip_y = py + dy * tip_dist;
+
+        // Two base corners (slightly behind the player):
+        float back_offset = 2.0f;
+        float base1_x = px + perp_x * base_dist - dx * back_offset;
+        float base1_y = py + perp_y * base_dist - dy * back_offset;
+        float base2_x = px - perp_x * base_dist - dx * back_offset;
+        float base2_y = py - perp_y * base_dist - dy * back_offset;
+
+        ALLEGRO_COLOR col = al_map_rgb(255, 255, 255);
+        al_draw_filled_triangle(
+            tip_x,   tip_y,
+            base1_x, base1_y,
+            base2_x, base2_y,
+            col
+        );
+    }
+
+    ElementVec allEle = _Get_all_elements(self);
+    for (int i = 0; i < allEle.len; i++) {
+        Elements *ele = allEle.arr[i];
+        ele->Draw(ele);  // e.g. Projectile_draw(ele) draws a white circle 
+    }
 
     bats_draw();
 

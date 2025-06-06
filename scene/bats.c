@@ -10,7 +10,7 @@ static ALLEGRO_BITMAP *bat_sprite = NULL;
 static Bat bats[MAX_BATS];
 static int num_bats = 0;
 static float spawn_timer = 0.0f;
-static float spawn_interval = 2.0f;
+static float spawn_interval = 3.0f;
 static float elapsed_time = 0.0f;
 
 
@@ -18,10 +18,10 @@ static float elapsed_time = 0.0f;
 void bats_init(void) {
     bat_sprite = al_load_bitmap("assets/tilesets/bat.png");
     GAME_ASSERT(bat_sprite, "Could not load assets/tilesets/bat.png\n");
-    num_bats       = 0;
-    spawn_interval = 2.0f;  
-    spawn_timer    = spawn_interval;
-    elapsed_time   = 0.0f;
+    num_bats = 0;
+    spawn_interval = 3.0f;  
+    spawn_timer = spawn_interval;
+    elapsed_time = 0.0f;
 }
 
 void bats_cheat_spawn(int count) {
@@ -160,4 +160,12 @@ void bats_destroy(void) {
 
 int bats_get_count(void) {
     return num_bats;
+}
+
+Bat* bats_array(void) {
+    return bats;
+}
+
+int* bats_count_ptr(void) {
+    return &num_bats;
 }

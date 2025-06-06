@@ -8,10 +8,9 @@ typedef enum SceneType
     GameScene_L,
     OptionsScene_L,
     KeyBindScene_L, 
-    ResolutionScene_L,
-    BrightnessScene_L,
     Exit_L
 } SceneType;
 void create_scene(SceneType);
+
 
 #endif
