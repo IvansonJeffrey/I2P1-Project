@@ -12,6 +12,15 @@
 
 #define M_PI 3.14159265358979323846f
 
+static ALLEGRO_BITMAP *player_frames[PLAYER_FRAME_COUNT] = { NULL };
+static int player_current_frame = 0;
+static float player_anim_timer = 0.0f;
+static const float player_frame_interval = 0.10f;  // seconds per frame
+
+static bool player_is_moving(float dx, float dy) {
+    return (dx != 0.0f || dy != 0.0f);
+}
+
 typedef struct {
     int         type;
     float       world_x, world_y;
@@ -134,6 +143,13 @@ Scene *I2P_NewGameScene(int label) {
     }
 
     bats_init();
+
+    for (int i = 0; i < PLAYER_FRAME_COUNT; i++) {
+        char path[64];
+        sprintf(path, "assets/image/walk%d.png", i+1);
+        player_frames[i] = al_load_bitmap(path);
+        GAME_ASSERT(player_frames[i], "Failed to load player walk frame: %s\n", path);
+    }
     
     // 4) Initialize global player position & camera:
     player_x = 0.0f;
@@ -230,6 +246,19 @@ void I2P_game_scene_update(Scene *self) {
     cam_x = player_x - (WIDTH  / 2.0f);
     cam_y = player_y - (HEIGHT / 2.0f);
 
+    bool moving = player_is_moving(dx, dy);
+    if (moving) {
+        player_anim_timer += dt;
+        if (player_anim_timer >= player_frame_interval) {
+            player_anim_timer -= player_frame_interval;
+            player_current_frame = (player_current_frame + 1) % PLAYER_FRAME_COUNT;
+        }
+    } else {
+        // If not moving, go back to frame 0 (idle) and reset timer
+        player_current_frame = 0;
+        player_anim_timer = 0.0f;
+    }
+
     bats_update(dt);
 }
 
@@ -266,11 +295,12 @@ void I2P_game_scene_draw(Scene *self) {
         }
     }
 
-    // Draw the player as a white circle:
-    float px = player_x - cam_x;
-    float py = player_y - cam_y;
-    al_draw_filled_circle(px, py, 16.0f, al_map_rgb(255, 255, 255));
-    al_draw_circle(px, py, 16.0f, al_map_rgb(0, 0, 0), 2.0f);
+    ALLEGRO_BITMAP *frame = player_frames[player_current_frame];    
+    int fw = al_get_bitmap_width(frame);
+    int fh = al_get_bitmap_height(frame);
+    float draw_x = (player_x - cam_x) - (fw / 2.0f);
+    float draw_y = (player_y - cam_y) - (fh / 2.0f);
+    al_draw_bitmap(frame, draw_x, draw_y, 0);
 
     bats_draw();
 
@@ -301,6 +331,14 @@ void I2P_game_scene_destroy(Scene *self) {
 
 
     bats_destroy();
+
+    for (int i = 0; i < PLAYER_FRAME_COUNT; i++) {
+        if (player_frames[i]) {
+            al_destroy_bitmap(player_frames[i]);
+            player_frames[i] = NULL;
+        }
+    }
+
     free(gs);
     free(self);
 }

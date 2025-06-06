@@ -62,8 +62,8 @@ void execute(Game *self)
             }
 
             if (event.keyboard.keycode == ALLEGRO_KEY_QUOTE) {
-                printf("*** Cheat: Spawning 100 bats around you ***\n");
-                bats_cheat_spawn(100);
+                printf("*** Cheat: Spawning 150 bats around you ***\n");
+                bats_cheat_spawn(150);
                 break;
             }
 

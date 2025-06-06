@@ -11,6 +11,8 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
+#define PLAYER_FRAME_COUNT 7
+
 /// I2P_GameScene: holds the ground_map + object_tiles + dimensions
 typedef struct _I2P_GameScene {
     Scene base;                           // so we can cast to Scene*

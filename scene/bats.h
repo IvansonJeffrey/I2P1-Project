@@ -4,7 +4,7 @@
 #include <allegro5/allegro.h>
 #include "../global.h"   // for player_x, player_y, cam_x, cam_y, FPS
 
-#define MAX_BATS 100
+#define MAX_BATS 150
 #define SAFE_RADIUS 200.0f
 #define SPAWN_RADIUS 300.0f
 
