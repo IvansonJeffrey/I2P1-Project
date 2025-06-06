@@ -6,7 +6,10 @@
 #include "../global.h"
 
 // Internal storage (static)
-static ALLEGRO_BITMAP *bat_sprite = NULL;
+ALLEGRO_BITMAP *bat_frames[BAT_FRAME_COUNT] = { NULL };
+float bat_anim_timer = 0.0f;   // accumulates delta time
+int   bat_current_frame = 0;      // index 0..2
+
 static Bat bats[MAX_BATS];
 static int num_bats = 0;
 static float spawn_timer = 0.0f;
@@ -16,10 +19,22 @@ static float elapsed_time = 0.0f;
 
 // Initialize bat subsystem: load sprite and set timers
 void bats_init(void) {
-    bat_sprite = al_load_bitmap("assets/tilesets/bat.png");
-    GAME_ASSERT(bat_sprite, "Could not load assets/tilesets/bat.png\n");
+    // 1) Load each of the 3 frames:
+    for (int i = 0; i < BAT_FRAME_COUNT; i++) {
+        char path[64];
+        // We expect files named bat1.png, bat2.png, bat3.png under assets/tilesets/
+        sprintf(path, "assets/tilesets/bat%d.png", i + 1);
+        bat_frames[i] = al_load_bitmap(path);
+        GAME_ASSERT(bat_frames[i], "Could not load %s\n", path);
+    }
+
+    // 2) Initialize counters
+    bat_anim_timer = 0.0f;
+    bat_current_frame = 0;
+
+    // 3) Initialize spawning/movement variables exactly as before
     num_bats = 0;
-    spawn_interval = 3.0f;  
+    spawn_interval = 3.0f;
     spawn_timer = spawn_interval;
     elapsed_time = 0.0f;
 }
@@ -43,6 +58,19 @@ void bats_cheat_spawn(int count) {
 
 // Update bats each frame: spawn new waves (Fibonacci) and move toward player
 void bats_update(float dt) {
+
+    if(player_is_dead)
+    {
+        return;
+    }
+
+    const float BAT_FRAME_INTERVAL = 0.10f;  
+    bat_anim_timer += dt;
+    if (bat_anim_timer >= BAT_FRAME_INTERVAL) {
+        bat_anim_timer -= BAT_FRAME_INTERVAL;
+        bat_current_frame = (bat_current_frame + 1) % BAT_FRAME_COUNT;
+    }
+
     elapsed_time += dt;
     spawn_timer  += dt;
 
@@ -81,17 +109,15 @@ void bats_update(float dt) {
         }
     }
 
-    if (bat_sprite) {
-        int bw = al_get_bitmap_width(bat_sprite);
-        int bh = al_get_bitmap_height(bat_sprite);
-        float bat_radius = (bw < bh ? bw : bh) * 0.5f / 2.0f; 
-        // Note: /2.0f because we drew bat with its center, but original code draws
-        // bat_sprite with bat’s center at (x - bw/2, y - bh/2). So half of half‐dimension.
-        // If you want a slightly smaller collision area, leave it as is; otherwise, you
-        // can just use max(bw,bh)*0.5f.
+    if (bat_frames[bat_current_frame]) {
+        ALLEGRO_BITMAP *frame = bat_frames[bat_current_frame];
+        int bw = al_get_bitmap_width(frame);
+        int bh = al_get_bitmap_height(frame);
+        // As before, half of half‐dimension gives a circle roughly inscribed in the sprite
+        float bat_radius = (bw < bh ? bw : bh) * 0.5f / 2.0f;
 
         const float player_radius = 16.0f;  
-        const float sum_r = player_radius + bat_radius;
+        const float sum_r  = player_radius + bat_radius;
         const float sum_r2 = sum_r * sum_r;
 
         for (int i = 0; i < num_bats; ) {
@@ -102,21 +128,23 @@ void bats_update(float dt) {
             // 2) Check circle vs circle overlap
             if ((dx * dx + dy * dy) <= sum_r2) {
                 if (!player_invincible) {
-                    // a) Damage the player and remove the bat
-                    player_health--;
+                    // a) Damage the player and clamp health to 0:
+                    if (player_health > 0) {
+                        player_health--;
+                    }
                     printf("Player hit by a bat!  Health now: %d\n", player_health);
 
-                    if (player_health <= 0) {
-                        // Game Over: print score (0 for now) and exit
+                    if (player_health <= 0 && !player_is_dead) {
+                        player_health = 0;
+                        player_is_dead = true;
                         printf("\nGame Over!\nScore: %d\n", game_score);
                         fflush(stdout);
-                        exit(0);
+                        return; // skip any further bat logic this frame
                     }
 
-                    // Remove the bat by swapping with last
+                    // Remove this bat by swapping with the last
                     bats[i] = bats[num_bats - 1];
                     num_bats--;
-                    // do NOT i++ because we just swapped another bat into index i
                     continue;
                 } else {
                     // b) Player is invincible → push bat just outside collision radius
@@ -126,34 +154,37 @@ void bats_update(float dt) {
                         bats[i].x = player_x + dx * push_factor;
                         bats[i].y = player_y + dy * push_factor;
                     }
-                    // Then advance to next bat:
+                    // Move on to next bat
                     i++;
                     continue;
                 }
             }
-            // No collision → move on
+            // No collision → proceed to the next bat
             i++;
         }
     }
 }
 
-// Draw all active bats on top of the scene
 void bats_draw(void) {
-    if (!bat_sprite) return;
-    int bw = al_get_bitmap_width (bat_sprite);
-    int bh = al_get_bitmap_height(bat_sprite);
+    ALLEGRO_BITMAP *frame = bat_frames[bat_current_frame];
+    if (!frame) return;  
+
+    int bw = al_get_bitmap_width(frame);
+    int bh = al_get_bitmap_height(frame);
+
     for (int i = 0; i < num_bats; i++) {
         float sx = bats[i].x - cam_x - (bw * 0.5f);
         float sy = bats[i].y - cam_y - (bh * 0.5f);
-        al_draw_bitmap(bat_sprite, sx, sy, 0);
+        al_draw_bitmap(frame, sx, sy, 0);
     }
 }
 
-// Clean up bat sprite
 void bats_destroy(void) {
-    if (bat_sprite) {
-        al_destroy_bitmap(bat_sprite);
-        bat_sprite = NULL;
+    for (int i = 0; i < BAT_FRAME_COUNT; i++) {
+        if (bat_frames[i]) {
+            al_destroy_bitmap(bat_frames[i]);
+            bat_frames[i] = NULL;
+        }
     }
     num_bats = 0;
 }

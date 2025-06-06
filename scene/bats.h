@@ -12,6 +12,10 @@
 #define M_PI 3.14159265358979323846f
 #endif
 
+#define BAT_FRAME_COUNT 3
+extern float bat_anim_timer;   
+extern int bat_current_frame;  
+
 typedef struct {
     float x, y;    // world coordinates
     float speed;   // pixels per second

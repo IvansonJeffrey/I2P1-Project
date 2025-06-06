@@ -42,6 +42,14 @@ extern int game_score;
 extern float cam_x;         // camera’s top-left X in world coords
 extern float cam_y;         // camera’s top-left Y in world coords
 
+extern ALLEGRO_BITMAP *death_frames[];
+extern bool player_is_dead;
+extern float death_timer;
+extern int death_current_frame;
+extern const float death_duration;
+extern const float death_frame_interval;
+
+
 // Tile / chunk sizes:
 #define CHUNK_SIZE    512    // each “chunk” is 512×512 pixels
 

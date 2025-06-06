@@ -10,9 +10,9 @@
 #include <math.h>
 #include "bats.h"
 #include "../element/projectile.h"
-#include "sceneManager.h"
 #include "../global.h"
 #include "gamescene.h"
+#include "sceneManager.h"
 
 #define M_PI 3.14159265358979323846f
 
@@ -29,6 +29,18 @@ float player_facing_dx = 0.0f;
 float player_facing_dy = -1.0f; 
 
 static float attack_timer = 0.0f;
+
+#define DEATH_FRAME_COUNT 8
+ALLEGRO_BITMAP *death_frames[DEATH_FRAME_COUNT] = { NULL };
+// Is the player currently in “dying” state?
+bool player_is_dead = false;
+// How long (so far) we’ve been playing the death animation:
+float death_timer = 0.0f;
+// Which death frame index (0..7) to draw right now:
+int death_current_frame = 0;
+
+const float death_duration = 2.0f;
+const float death_frame_interval = death_duration / (float)DEATH_FRAME_COUNT;
 
 typedef struct {
     int         type;
@@ -159,6 +171,13 @@ Scene *I2P_NewGameScene(int label) {
         player_frames[i] = al_load_bitmap(path);
         GAME_ASSERT(player_frames[i], "Failed to load player walk frame: %s\n", path);
     }
+
+    for (int i = 0; i < DEATH_FRAME_COUNT; i++) {
+        char dpath[64];
+        sprintf(dpath, "assets/image/death%d.png", i+1);
+        death_frames[i] = al_load_bitmap(dpath);
+        GAME_ASSERT(death_frames[i], "Failed to load death frame: %s\n", dpath);
+    }
     
     // 4) Initialize global player position & camera:
     player_x = 0.0f;
@@ -224,6 +243,24 @@ static bool I2P_check_collision(float cx, float cy, I2P_GameScene *gs) {
 void I2P_game_scene_update(Scene *self) {
     (void)self;
     float dt = 1.0f / FPS;
+
+
+    if (player_is_dead) {
+        death_timer += dt;
+
+        int frame_index = (int)(death_timer / death_frame_interval);
+        if (frame_index < DEATH_FRAME_COUNT) {
+            death_current_frame = frame_index;
+        } else {
+            death_current_frame = DEATH_FRAME_COUNT - 1;
+        }
+
+        if (death_timer >= death_duration) {
+            exit(0);
+        }
+
+        return;
+    }
 
     // 1) Movement delta from input
     float dx = 0.0f, dy = 0.0f;
@@ -335,12 +372,22 @@ void I2P_game_scene_draw(Scene *self) {
         }
     }
 
-    ALLEGRO_BITMAP *frame = player_frames[player_current_frame];    
-    int fw = al_get_bitmap_width(frame);
-    int fh = al_get_bitmap_height(frame);
-    float draw_x = (player_x - cam_x) - (fw / 2.0f);
-    float draw_y = (player_y - cam_y) - (fh / 2.0f);
-    al_draw_bitmap(frame, draw_x, draw_y, 0);
+    if (player_is_dead) {
+        ALLEGRO_BITMAP *dframe = death_frames[death_current_frame];
+        int dw = al_get_bitmap_width(dframe);
+        int dh = al_get_bitmap_height(dframe);
+        float dx = (player_x - cam_x) - (dw / 2.0f);
+        float dy = (player_y - cam_y) - (dh / 2.0f);
+        al_draw_bitmap(dframe, dx, dy, 0);
+    } 
+    else {
+        ALLEGRO_BITMAP *frame = player_frames[player_current_frame];
+        int fw = al_get_bitmap_width(frame);
+        int fh = al_get_bitmap_height(frame);
+        float px = (player_x - cam_x) - (fw / 2.0f);
+        float py = (player_y - cam_y) - (fh / 2.0f);
+        al_draw_bitmap(frame, px, py, 0);
+    }
 
     {
         // Player’s screen‐space center:
@@ -380,18 +427,18 @@ void I2P_game_scene_draw(Scene *self) {
         );
     }
 
-    ElementVec allEle = _Get_all_elements(self);
-    for (int i = 0; i < allEle.len; i++) {
-        Elements *ele = allEle.arr[i];
-        ele->Draw(ele);  // e.g. Projectile_draw(ele) draws a white circle 
+    if (!player_is_dead) {
+        ElementVec allEle = _Get_all_elements(self);
+        for (int i = 0; i < allEle.len; i++) {
+            Elements *ele = allEle.arr[i];
+            ele->Draw(ele);
+        }
+        bats_draw();
     }
 
-    bats_draw();
-
-    {
+    if (!player_is_dead) {
         char buf[32];
         sprintf(buf, "%d / 150 HP", player_health);
-        // Y‐position: a 2-pixel margin above the bottom edge
         int text_x = 5;
         int text_y = HEIGHT - (40 + 2);
         al_draw_text(health_font, al_map_rgb(255, 0, 0), text_x, text_y, 0, buf);
@@ -420,6 +467,13 @@ void I2P_game_scene_destroy(Scene *self) {
         if (player_frames[i]) {
             al_destroy_bitmap(player_frames[i]);
             player_frames[i] = NULL;
+        }
+    }
+
+    for (int i = 0; i < DEATH_FRAME_COUNT; i++) {
+        if (death_frames[i]) {
+            al_destroy_bitmap(death_frames[i]);
+            death_frames[i] = NULL;
         }
     }
 
