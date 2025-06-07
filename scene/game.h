@@ -13,6 +13,10 @@
 
 #define PLAYER_FRAME_COUNT 7
 
+typedef struct {
+    int cx, cy;
+} EatenBurger;
+
 /// I2P_GameScene: holds the ground_map + object_tiles + dimensions
 typedef struct _I2P_GameScene {
     Scene base;                           // so we can cast to Scene*
@@ -25,6 +29,10 @@ typedef struct _I2P_GameScene {
     int hit_height    [MAX_OBJ_TYPES];
     
     int ground_w, ground_h;
+
+    EatenBurger *eaten_burgers;
+    int eaten_count;
+    int eaten_cap;
 } I2P_GameScene;
 
 /// Factory: create a new I2P_GameScene for SceneType == GameScene_L

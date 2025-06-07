@@ -16,6 +16,9 @@
 #include <stdbool.h>
 #include "scene/bats.h"
 
+static bool cheat_speed_active = false;
+static float cheat_original_speed = 0.0f;
+
 Game *New_Game()
 {
     Game *game = (Game *)malloc(sizeof(Game));
@@ -66,6 +69,25 @@ void execute(Game *self)
                 bats_cheat_spawn(150);
                 break;
             }
+
+            if (event.keyboard.keycode == ALLEGRO_KEY_F) {
+            // toggle cheat state
+            cheat_speed_active = !cheat_speed_active;
+
+            if (cheat_speed_active) {
+                cheat_original_speed = player_speed;
+                player_speed = cheat_original_speed * 2.0f;  
+            }
+            else {
+                player_speed = cheat_original_speed;
+            }
+
+            printf("*** Cheat: Speed %s (%.0f → %.0f) ***\n",
+                cheat_speed_active ? "ON" : "OFF",
+                cheat_original_speed,
+                player_speed);
+            break;
+        }
 
             if (window == KeyBindScene_L ) 
             {

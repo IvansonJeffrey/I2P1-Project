@@ -42,6 +42,12 @@ int death_current_frame = 0;
 const float death_duration = 2.0f;
 const float death_frame_interval = death_duration / (float)DEATH_FRAME_COUNT;
 
+#define CHUNKS_PER_BURGER  3
+#define BURGER_HEAL_AMOUNT 25 
+#define PLAYER_MAX_HEALTH 150
+
+static ALLEGRO_BITMAP *burger_bitmap = NULL;
+
 typedef struct {
     int         type;
     float       world_x, world_y;
@@ -179,7 +185,13 @@ Scene *I2P_NewGameScene(int label) {
         GAME_ASSERT(death_frames[i], "Failed to load death frame: %s\n", dpath);
     }
     
-    // 4) Initialize global player position & camera:
+    burger_bitmap = al_load_bitmap("assets/tilesets/burger.png");
+    GAME_ASSERT(burger_bitmap, "Failed to load assets/image/burger.png\n");
+
+    gs->eaten_burgers = NULL;
+    gs->eaten_count = 0;
+    gs->eaten_cap = 0;
+
     player_x = 0.0f;
     player_y = 0.0f;
     player_speed = 200.0f; 
@@ -286,13 +298,13 @@ void I2P_game_scene_update(Scene *self) {
     
     I2P_GameScene *gs = (I2P_GameScene *)self->pDerivedObj;
    
-   float try_x = player_x + dx;
-   float try_y = player_y + dy;
-   if (!I2P_check_collision(try_x, player_y, gs)) {
-        player_x = try_x;
-   }
-   if (!I2P_check_collision(player_x, try_y, gs)) {
-        player_y = try_y;
+    float try_x = player_x + dx;
+    float try_y = player_y + dy;
+    if (!I2P_check_collision(try_x, player_y, gs)) {
+            player_x = try_x;
+    }
+    if (!I2P_check_collision(player_x, try_y, gs)) {
+            player_y = try_y;
     }
 
     cam_x = player_x - (WIDTH  / 2.0f);
@@ -339,6 +351,29 @@ void I2P_game_scene_update(Scene *self) {
     }
 }
 
+static bool is_burger_eaten(I2P_GameScene *gs, int cx, int cy) {
+    for (int i = 0; i < gs->eaten_count; i++) {
+        if (gs->eaten_burgers[i].cx == cx &&
+            gs->eaten_burgers[i].cy == cy)
+            return true;
+    }
+    return false;
+}
+
+// record that the burger in chunk (cx,cy) was eaten
+static void mark_burger_eaten(I2P_GameScene *gs, int cx, int cy) {
+    if (gs->eaten_count >= gs->eaten_cap) {
+        int newcap = gs->eaten_cap ? gs->eaten_cap * 2 : 16;
+        gs->eaten_burgers = realloc(gs->eaten_burgers,
+                                   newcap * sizeof *gs->eaten_burgers);
+        gs->eaten_cap = newcap;
+    }
+    // record the new eaten‐burger
+    gs->eaten_burgers[gs->eaten_count].cx = cx;
+    gs->eaten_burgers[gs->eaten_count].cy = cy;
+    gs->eaten_count++;
+}
+
 void I2P_game_scene_draw(Scene *self) {
     I2P_GameScene *gs = (I2P_GameScene *)self->pDerivedObj;
 
@@ -368,7 +403,45 @@ void I2P_game_scene_draw(Scene *self) {
 
     for (int cy = chunk_min_y; cy <= chunk_max_y; cy++) {
         for (int cx = chunk_min_x; cx <= chunk_max_x; cx++) {
+            // 1) still draw your scenery objects…
             I2P_generate_and_draw_objects_in_chunk(cx, cy, gs);
+
+            // only one burger per 5×5 grid, as before...
+            int mx = ((cx % CHUNKS_PER_BURGER) + CHUNKS_PER_BURGER) % CHUNKS_PER_BURGER;
+            int my = ((cy % CHUNKS_PER_BURGER) + CHUNKS_PER_BURGER) % CHUNKS_PER_BURGER;
+            if (mx != 0 || my != 0) continue;
+
+            // skip if already eaten
+            if (is_burger_eaten(gs, cx, cy)) continue;
+
+            // 3) seed & pick exactly one spot in this chunk
+            unsigned int seed = (unsigned int)((cx * 73856093u) ^ (cy * 19349663u)) + 0xBEEF;
+            srand(seed);
+            float local_x = (rand() / (float)RAND_MAX) * CHUNK_SIZE;
+            float local_y = (rand() / (float)RAND_MAX) * CHUNK_SIZE;
+
+            // 4) world‐space coords
+            float world_x = cx * CHUNK_SIZE + local_x;
+            float world_y = cy * CHUNK_SIZE + local_y;
+
+            // 5) draw it
+            int bw = al_get_bitmap_width(burger_bitmap);
+            int bh = al_get_bitmap_height(burger_bitmap);
+            float sx = world_x - cam_x - bw*0.5f;
+            float sy = world_y - cam_y - bh*0.5f;
+            al_draw_bitmap(burger_bitmap, sx, sy, 0);
+
+            // 6) collision & heal
+            float pr = 16.0f;
+            float br = (bw < bh ? bw : bh)*0.5f/2.0f;
+            float dx = world_x - player_x;
+            float dy = world_y - player_y;
+            if (dx*dx + dy*dy <= (pr + br)*(pr + br)) {
+                // heal
+                player_health = min(player_health + BURGER_HEAL_AMOUNT,
+                                    PLAYER_MAX_HEALTH);
+                mark_burger_eaten(gs, cx, cy);
+            }
         }
     }
 
@@ -475,6 +548,16 @@ void I2P_game_scene_destroy(Scene *self) {
             al_destroy_bitmap(death_frames[i]);
             death_frames[i] = NULL;
         }
+    }
+
+    if (burger_bitmap) {
+        al_destroy_bitmap(burger_bitmap);
+        burger_bitmap = NULL;
+    }
+
+    if (gs->eaten_burgers) {
+        free(gs->eaten_burgers);
+        gs->eaten_burgers = NULL;
     }
 
     free(gs);
