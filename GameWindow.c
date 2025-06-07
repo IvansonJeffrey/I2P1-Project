@@ -19,10 +19,9 @@ static float cheat_original_speed = 0.0f;
 
 static const char* main_menu_items[] = {
     "Start",
-    "Options",
     "Exit"
 };
-static const int main_menu_count  = 3;
+static const int main_menu_count = 2;
 static int main_menu_cursor = 0;
 
 typedef enum {
@@ -71,12 +70,11 @@ void execute(Game *self)
         switch (event.type)
         {
             case ALLEGRO_EVENT_TIMER:
-                if (game_state == STATE_PLAYING) {
-                    run &= self->game_update(self);
-                }
-                // Always redraw (so the options overlay still shows)
-                self->game_draw(self);
-                break;
+            if (game_state == STATE_PLAYING) {
+                run &= self->game_update(self);
+            }
+            self->game_draw(self);
+            break;
 
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
                 // stop game
@@ -103,17 +101,11 @@ void execute(Game *self)
                                 create_scene(GameScene_L);
                                 game_state = STATE_PLAYING;
                             }
-                            else if (main_menu_cursor == 1) {
-                                scene->Destroy(scene);
-                                 create_scene(OptionsScene_L);
-                                 game_state = STATE_PLAYING;
-                            }
                             else {
                                 exit(0);
                             }
                             break;
                     }
-                    // consume the key here
                     break;
                 }
                 key_state[event.keyboard.keycode] = true;

@@ -10,23 +10,23 @@ void create_scene(SceneType type)
 {
     switch (type)
     {
-    case Menu_L:
-        scene = New_Menu(Menu_L);
-        break;
+        case Menu_L:
+            scene = New_Menu(Menu_L);
+            break;
 
-    case GameScene_L:
-        scene = I2P_NewGameScene(GameScene_L);
-        break;
+        case GameScene_L:
+            scene = I2P_NewGameScene(GameScene_L);
+            break;
 
-    case OptionsScene_L:
-        scene = New_OptionsScene(OptionsScene_L);
-        break;
+        case OptionsScene_L:
+            scene = New_OptionsScene(OptionsScene_L);
+            break;
 
-    case Exit_L:
-        break;
+        case Exit_L:
+            break;
 
-    default:
-        break;
+        default:
+            break;
     }
 }
 

@@ -7,6 +7,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include "sceneManager.h"
+#include "../global.h"
 
 static const char *menu_items[] = {
     "Start Game",
@@ -79,7 +80,7 @@ void menu_update(Scene *self)
         switch (m->selected) {
           case 0: window = GameScene_L;   break;
           case 1: window = OptionsScene_L; break;
-          case 2: window = Exit_L;         break;
+          case 2: window = Exit_L; break;
         }
     }
 }

@@ -156,6 +156,13 @@ Scene *I2P_NewGameScene(int label) {
     Scene *scene = New_Scene(label);
     scene->pDerivedObj = gs;
 
+    player_health = PLAYER_MAX_HEALTH; 
+    game_score = 0;
+    player_invincible = false;
+    player_is_dead = false;
+    death_timer = 0.0f;
+    death_current_frame = 0;
+
     // 2) Load ground_map.png (grass background) and store its dimensions:
     gs->ground_map = al_load_bitmap("assets/tilesets/ground_map.png");
     GAME_ASSERT(gs->ground_map, "Could not load assets/tilesets/ground_map.png\n");
