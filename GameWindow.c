@@ -19,15 +19,17 @@ static float cheat_original_speed = 0.0f;
 
 static const char* main_menu_items[] = {
     "Start",
+    "About",
     "Exit"
 };
-static const int main_menu_count = 2;
+static const int main_menu_count = 3;
 static int main_menu_cursor = 0;
 
 typedef enum {
     STATE_MAIN_MENU,
     STATE_PLAYING,
     STATE_OPTIONS,
+    STATE_ABOUT,
     STATE_GAMEOVER
 } GameState;
 
@@ -42,7 +44,6 @@ static const char* options_text[3] = {
 };
 
 static bool  slider_dragging = false;
-
 
 ALLEGRO_FONT *menu_font = NULL;
 
@@ -62,7 +63,6 @@ Game *New_Game()
 
 void execute(Game *self)
 {
-    // main game loop
     bool run = true;
     while (run)
     {
@@ -82,6 +82,19 @@ void execute(Game *self)
                 break;
 
             case ALLEGRO_EVENT_KEY_DOWN:
+                if (game_state == STATE_ABOUT) {
+                    switch (event.keyboard.keycode) {
+                        case ALLEGRO_KEY_ENTER:
+                        case ALLEGRO_KEY_PAD_ENTER:
+                        case ALLEGRO_KEY_ESCAPE:
+                            game_state = STATE_MAIN_MENU;
+                            break;
+                        default:
+                            break;
+                    }
+                    break;
+                }
+
                 if (game_state == STATE_MAIN_MENU) {
                     switch (event.keyboard.keycode) {
                         case ALLEGRO_KEY_UP:
@@ -100,6 +113,10 @@ void execute(Game *self)
                                 // Start
                                 create_scene(GameScene_L);
                                 game_state = STATE_PLAYING;
+                            }
+                            else if(main_menu_cursor == 1)
+                            {
+                                game_state = STATE_ABOUT;
                             }
                             else {
                                 exit(0);
@@ -230,15 +247,11 @@ void execute(Game *self)
                            player_speed);
                 }
 
-                // ── KeyBindScene handling ──
-                if (window == KeyBindScene_L) {
-                    KeyBindScene *k = (KeyBindScene*)scene->pDerivedObj;
-                    if (k->waiting_for_key) {
-                        k->keymap[k->selected] =
-                            event.keyboard.keycode;
-                        k->waiting_for_key = false;
-                        break;
-                    }
+                else if (event.keyboard.keycode == ALLEGRO_KEY_4) {
+                    // Instant–death cheat: kill the player immediately
+                    player_health    = 0;
+                    player_is_dead   = true;
+                    printf("*** Cheat: Instant Death! ***\n");
                 }
                 break;
 
@@ -595,6 +608,40 @@ void game_draw(Game *self)
                          "Exit");
         }
     }
+    if (game_state == STATE_ABOUT) {
+       al_clear_to_color(al_map_rgb(20,20,50));
+
+       // Header
+       al_draw_text(menu_font, al_map_rgb(255,215,0),
+                    WIDTH/2, HEIGHT/4,
+                    ALLEGRO_ALIGN_CENTRE,
+                   "About Echoes of the End");
+
+       // Synopsis lines
+       al_draw_text(menu_font, al_map_rgb(200,200,200),
+                    WIDTH/2, HEIGHT/2 - 40,
+                    ALLEGRO_ALIGN_CENTRE,
+                    "You are the last guardian of a forgotten world.");
+       al_draw_text(menu_font, al_map_rgb(200,200,200),
+                    WIDTH/2, HEIGHT/2,
+                    ALLEGRO_ALIGN_CENTRE,
+                    "Fight through the darkness. Discover the secrets.");
+
+       // Credits
+       al_draw_text(menu_font, al_map_rgb(200,200,200),
+                    WIDTH/2, HEIGHT/2 + 40,
+                    ALLEGRO_ALIGN_CENTRE,
+                    "Created by Group 30 (Ghiffar & Jeffrey)");
+
+       // Prompt to return
+       al_draw_text(menu_font, al_map_rgb(200,200,200),
+                    WIDTH/2, HEIGHT - 50,
+                    ALLEGRO_ALIGN_CENTRE,
+                    "Press Enter or Esc to return");
+
+       al_flip_display();
+       return;
+    }  
 
     al_flip_display();
 }
