@@ -42,12 +42,10 @@ static const char* options_text[3] = {
     "Exit"
 };
 
-static float music_volume = 1.0f;
-
 static bool  slider_dragging = false;
 
 
-static ALLEGRO_FONT *menu_font = NULL;
+ALLEGRO_FONT *menu_font = NULL;
 
 Game *New_Game()
 {
@@ -57,7 +55,7 @@ Game *New_Game()
     game->game_update = game_update;
     game->game_draw = game_draw;
     game->game_destroy = game_destroy;
-    game->title = "Final Project 10xxxxxxx";
+    game->title = "Final Project GROUP 30";
     game->display = NULL;
     game->game_init(game);
     return game;
@@ -86,7 +84,44 @@ void execute(Game *self)
                 break;
 
             case ALLEGRO_EVENT_KEY_DOWN:
+                if (game_state == STATE_MAIN_MENU) {
+                    switch (event.keyboard.keycode) {
+                        case ALLEGRO_KEY_UP:
+                        case ALLEGRO_KEY_W:
+                            main_menu_cursor =
+                            (main_menu_cursor + main_menu_count - 1) % main_menu_count;
+                            break;
+                        case ALLEGRO_KEY_DOWN:
+                        case ALLEGRO_KEY_S:
+                            main_menu_cursor =
+                            (main_menu_cursor + 1) % main_menu_count;
+                            break;
+                        case ALLEGRO_KEY_ENTER:
+                        case ALLEGRO_KEY_PAD_ENTER:
+                            if (main_menu_cursor == 0) {
+                                // Start
+                                create_scene(GameScene_L);
+                                game_state = STATE_PLAYING;
+                            }
+                            else if (main_menu_cursor == 1) {
+                                scene->Destroy(scene);
+                                 create_scene(OptionsScene_L);
+                                 game_state = STATE_PLAYING;
+                            }
+                            else {
+                                exit(0);
+                            }
+                            break;
+                    }
+                    // consume the key here
+                    break;
+                }
                 key_state[event.keyboard.keycode] = true;
+
+                if (window == OptionsScene_L) {
+                    scene->Update(scene);
+                    break;
+                }
 
                 // → Enter pause/options
                 if (game_state == STATE_PLAYING &&
@@ -248,44 +283,6 @@ void execute(Game *self)
                 break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
-            if (game_state == STATE_MAIN_MENU) {
-                switch (event.keyboard.keycode) {
-                    case ALLEGRO_KEY_UP:
-                    case ALLEGRO_KEY_W:
-                        main_menu_cursor =
-                        (main_menu_cursor + main_menu_count - 1) % main_menu_count;
-                        break;
-                    case ALLEGRO_KEY_DOWN:
-                    case ALLEGRO_KEY_S:
-                        main_menu_cursor =
-                        (main_menu_cursor + 1) % main_menu_count;
-                        break;
-                    case ALLEGRO_KEY_ENTER:
-                    case ALLEGRO_KEY_PAD_ENTER:
-                        if (main_menu_cursor == 0) {
-                            // Start
-                            create_scene(GameScene_L);
-                            game_state = STATE_PLAYING;
-                        }
-                        else if (main_menu_cursor == 1) {
-                            // Options
-                            options_cursor = 0;  // reuse your pause-options cursor
-                            game_state     = STATE_OPTIONS;
-                        }
-                        else {
-                            // Exit
-                            // Exit the main loop by signalling game_update → false
-                            // We can force the next display‐close or set a flag:
-                            al_rest(0.1);  // let display update
-                            exit(0);
-                        }
-                        break;
-                }
-                // consume the key here
-                break;
-            }
-
-
                 if (game_state == STATE_OPTIONS &&
                     event.mouse.button == 1)
                 {

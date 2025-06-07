@@ -1,106 +1,148 @@
-#include "optionscene.h"
-#include "sceneManager.h"    // for SceneType enums
-#include "scene.h"
+#include "sceneManager.h"
+#include "gamescene.h"
+#include "../global.h"
 #include <allegro5/allegro_primitives.h>
-#include <allegro5/allegro_ttf.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include <allegro5/allegro_font.h>
+#include <allegro5/allegro_audio.h>
 
-static const char *main_items[] = {
-    "Key Bindings",
-    "Resolution",
-    "Brightness",
-    "Back to Menu"
+static const char *opt_items[] = {
+    "Left",
+    "Right",
+    "Up",
+    "Down",
+    "Invicible",
+    "Movement speed",
+    "Spawn",
+    "Mute Music",
+    "Back"
 };
-#define MAIN_COUNT (sizeof(main_items)/sizeof(*main_items))
 
+static const int OPT_COUNT = sizeof(opt_items)/sizeof(*opt_items);
+
+typedef struct {
+    Scene base;
+    int cursor;
+    int num_options;
+    float *pMusicVolume;
+    bool waiting_for_key; 
+    int *keymap; 
+} OptionScene;
 
 Scene *New_OptionsScene(int label) {
-    OptionsScene *o= malloc(sizeof(*o));
-    Scene*scn = New_Scene(label);
+    OptionScene *o = calloc(1, sizeof *o);
+    Scene *s = New_Scene(label);
 
-    o->font = al_load_ttf_font("assets/font/pirulen.ttf", 24, 0);
-    o->x = WIDTH  / 2;
-    o->y= HEIGHT / 2 - 60;
-    o->selected_main  = 0;
+    // hook up our virtual methods
+    s->pDerivedObj = o;
+    s->Update = options_update;
+    s->Draw = options_draw;
+    s->Destroy = options_destroy;
 
-    // record the current key_state so we don't fire on an already-held key
-    o->up_prev    = key_state[ALLEGRO_KEY_UP];
-    o->down_prev  = key_state[ALLEGRO_KEY_DOWN];
-    o->enter_prev = key_state[ALLEGRO_KEY_ENTER];
+    o->cursor = 0;
+    o->num_options = sizeof(opt_items)/sizeof(*opt_items);
+    o->waiting_for_key = false;
+    o->keymap = keymap;            // assume int keymap[] is declared extern in global.h
+    o->pMusicVolume = &music_volume;     // extern float music_volume in global.c
 
-
-    o->enter_prev = false;
-
-    scn->pDerivedObj = o;
-    scn->Update      = options_update;
-    scn->Draw        = options_draw;
-    scn->Destroy     = options_destroy;
-    return scn;
+    return s;
 }
+
 
 void options_update(Scene *self) {
-    OptionsScene *o = self->pDerivedObj;
+    OptionScene *o = (OptionScene*)self->pDerivedObj;
+    ALLEGRO_EVENT *ev = &event;
 
-    // Navigate the four main options once per key‐press:
-    static bool up_prev = false, down_prev = false;
-    bool up   = key_state[ALLEGRO_KEY_UP];
-    bool down = key_state[ALLEGRO_KEY_DOWN];
-
-    if (up && !up_prev)
-        o->selected_main = (o->selected_main + MAIN_COUNT - 1) % MAIN_COUNT;
-    if (down && !down_prev)
-        o->selected_main = (o->selected_main + 1) % MAIN_COUNT;
-
-    up_prev   = up;
-    down_prev = down;
-
-    bool enter = key_state[ALLEGRO_KEY_ENTER];
-    if (enter && !o->enter_prev) {
-        self->scene_end = true;
-        switch (o->selected_main) {
-            case 0: window = KeyBindScene_L; break;
-            default: window = Menu_L;        break;
-        }
-    }
-    o->enter_prev = enter;
-
-    // On Enter, dispatch:
-    if (key_state[ALLEGRO_KEY_ENTER]) {
-        self->scene_end = true;
-        switch (o->selected_main) {
-            case 0:  window = KeyBindScene_L; break;
-            default: window = Menu_L; break;
+    if (ev->type == ALLEGRO_EVENT_KEY_DOWN) {
+        switch (ev->keyboard.keycode) {
+            case ALLEGRO_KEY_UP:
+                o->cursor = (o->cursor + o->num_options - 1) % o->num_options;
+                break;
+            case ALLEGRO_KEY_DOWN:
+                o->cursor = (o->cursor + 1) % o->num_options;
+                break;
+            case ALLEGRO_KEY_ENTER:
+            case ALLEGRO_KEY_PAD_ENTER:
+                if (o->cursor == 0) {
+                    // → jump into key-binding scene
+                    window          = KeyBindScene_L;
+                    self->scene_end = true;
+                }
+                else if (o->cursor == 1) {
+                    // → toggle music
+                    *o->pMusicVolume = (*o->pMusicVolume > 0.0f ? 0.0f : 1.0f);
+                    al_set_mixer_gain(al_get_default_mixer(), *o->pMusicVolume);
+                }
+                else { // cursor == 2
+                    // → back to main menu
+                    window          = Menu_L;
+                    self->scene_end = true;
+                }
+                break;
+            case ALLEGRO_KEY_ESCAPE:
+                window          = Menu_L;
+                self->scene_end = true;
+                break;
         }
     }
 }
 
+
 void options_draw(Scene *self) {
-    OptionsScene *o = self->pDerivedObj;
-    al_clear_to_color(al_map_rgb(0,0,0));
+    OptionScene *o = (OptionScene*)self->pDerivedObj;
+    al_clear_to_color(al_map_rgb(20,20,50));
 
-    // draw each main item
-    for (int i = 0; i < MAIN_COUNT; i++) {
-        int yy = o->y + i * 60;
-        ALLEGRO_COLOR col = (i == o->selected_main)
-            ? al_map_rgb(255,255,0)
+    // draw header
+    al_draw_text(menu_font, al_map_rgb(255,215,0),
+                 WIDTH/2,  80, ALLEGRO_ALIGN_CENTRE,
+                 "OPTIONS");
+
+    // draw each entry
+    char buf[64];
+    for (int i = 0; i < o->num_options; i++) {
+        // guard the label array
+        const char *label = (i < sizeof(opt_items)/sizeof(*opt_items))
+                            ? opt_items[i]
+                            : "(??)";
+
+        ALLEGRO_COLOR col = (i == o->cursor)
+            ? al_map_rgb(255,200,0)
             : al_map_rgb(200,200,200);
-        al_draw_text(o->font, col, o->x, yy,
-                     ALLEGRO_ALIGN_CENTRE, main_items[i]);
+
+        if (i < 7) {
+            // key‐bind row
+            const char *kn = al_keycode_to_name(o->keymap[i]);
+            if (!kn) kn = "(unknown)";
+            snprintf(buf, sizeof buf, "%-15s %s", label, kn);
+            al_draw_text(menu_font, col,
+                         WIDTH/2, 150 + i*40,
+                         ALLEGRO_ALIGN_CENTRE,
+                         buf);
+        }
+        else if (i == 7) {
+            // music toggle row
+            snprintf(buf, sizeof buf,
+                     "Mute Music: %s",
+                     *o->pMusicVolume > 0 ? "On" : "Off");
+            al_draw_text(menu_font, col,
+                         WIDTH/2, 150 + i*40,
+                         ALLEGRO_ALIGN_CENTRE,
+                         buf);
+        }
+        else {
+            // Back row
+            al_draw_text(menu_font, col,
+                         WIDTH/2, 150 + i*40,
+                         ALLEGRO_ALIGN_CENTRE,
+                         label);
+        }
     }
-
-    // single highlight box
-    int hy = o->y + o->selected_main * 60;
-    al_draw_rectangle(o->x - 200, hy - 20,
-                      o->x + 200, hy + 28,
-                      al_map_rgb(255,255,255), 2);
-
     al_flip_display();
 }
 
+
+
 void options_destroy(Scene *self) {
-    OptionsScene *o = self->pDerivedObj;
-    al_destroy_font(o->font);
-    free(o);
+    free(self->pDerivedObj);
     free(self);
 }
+

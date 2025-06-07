@@ -49,10 +49,20 @@ extern int death_current_frame;
 extern const float death_duration;
 extern const float death_frame_interval;
 
+extern ALLEGRO_FONT *menu_font;
+extern float music_volume;
 
 // Tile / chunk sizes:
 #define CHUNK_SIZE    512    // each “chunk” is 512×512 pixels
 
 // Number of object types (fences, pillars, plants, trees):
 #define MAX_OBJ_TYPES 10
+
+
+#define NUM_BINDS 7
+extern int keymap[NUM_BINDS];
+
+extern float cam_x;
+extern float cam_y;
+
 #endif

@@ -24,8 +24,8 @@ void game_scene_draw(Scene *self);
 void game_scene_destroy(Scene *self);
 
 Scene *New_OptionScene(int label);
-void   options_update    (Scene *self);
-void   options_draw      (Scene *self);
-void   options_destroy   (Scene *self);
+void options_update (Scene *self);
+void options_draw (Scene *self);
+void options_destroy (Scene *self);
 
 #endif

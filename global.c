@@ -20,13 +20,33 @@ int brightness = 100;
 
 ALLEGRO_FONT *health_font = NULL; 
 
-float player_x     = 0.0f;      // start at world‐origin (0,0)
-float player_y     = 0.0f;
+float player_x = 0.0f;      // start at world‐origin (0,0)
+float player_y = 0.0f;
 float player_speed = 200.0f;    // 200 pixels/second
 
 int player_health = 150;    // initialize the player’s health to 150
 bool player_invincible = false;
 int game_score = 0;
 
-float cam_x = 0.0f;             // camera top-left in world coords
+float cam_x = 0.0f;
 float cam_y = 0.0f;
+
+int keymap[NUM_BINDS] = {
+    ALLEGRO_KEY_A,      // Left
+    ALLEGRO_KEY_D,      // Right
+    ALLEGRO_KEY_W,      // Up
+    ALLEGRO_KEY_S,      // Down
+    ALLEGRO_KEY_C,      // Invincible cheat
+    ALLEGRO_KEY_F,       // Movement speed cheat
+    ALLEGRO_KEY_QUOTE      // Spawn cheat
+};
+
+float music_volume = 1.0f;
+
+void init_audio(void) {
+    al_install_audio();
+    al_init_acodec_addon();
+    al_reserve_samples(4);
+    al_set_mixer_gain(al_get_default_mixer(), music_volume);
+}
+
