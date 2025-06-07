@@ -241,7 +241,7 @@ void execute(Game *self)
                     } else {
                         player_speed = cheat_original_speed;
                     }
-                    printf("*** Cheat: Speed %s (%.0f → %.0f) ***\n",
+                    printf("*** Cheat: Speed %s ***\n",
                            cheat_speed_active ? "ON" : "OFF",
                            cheat_original_speed,
                            player_speed);
