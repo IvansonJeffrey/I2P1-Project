@@ -17,6 +17,14 @@
 static bool cheat_speed_active = false;
 static float cheat_original_speed = 0.0f;
 
+static const char* main_menu_items[] = {
+    "Start",
+    "Options",
+    "Exit"
+};
+static const int main_menu_count  = 3;
+static int main_menu_cursor = 0;
+
 typedef enum {
     STATE_MAIN_MENU,
     STATE_PLAYING,
@@ -162,7 +170,6 @@ void execute(Game *self)
                             }
                             break;
 
-                        // Back out = resume
                         case ALLEGRO_KEY_ESCAPE:
                             game_state = STATE_PLAYING;
                             break;
@@ -173,7 +180,6 @@ void execute(Game *self)
                     break;
                 }
 
-                // ── Your existing cheat‐key handlers ──
                 if (event.keyboard.keycode == ALLEGRO_KEY_C) {
                     player_invincible = !player_invincible;
                     printf("*** Cheat: Invincibility %s ***\n",
@@ -242,6 +248,44 @@ void execute(Game *self)
                 break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_DOWN:
+            if (game_state == STATE_MAIN_MENU) {
+                switch (event.keyboard.keycode) {
+                    case ALLEGRO_KEY_UP:
+                    case ALLEGRO_KEY_W:
+                        main_menu_cursor =
+                        (main_menu_cursor + main_menu_count - 1) % main_menu_count;
+                        break;
+                    case ALLEGRO_KEY_DOWN:
+                    case ALLEGRO_KEY_S:
+                        main_menu_cursor =
+                        (main_menu_cursor + 1) % main_menu_count;
+                        break;
+                    case ALLEGRO_KEY_ENTER:
+                    case ALLEGRO_KEY_PAD_ENTER:
+                        if (main_menu_cursor == 0) {
+                            // Start
+                            create_scene(GameScene_L);
+                            game_state = STATE_PLAYING;
+                        }
+                        else if (main_menu_cursor == 1) {
+                            // Options
+                            options_cursor = 0;  // reuse your pause-options cursor
+                            game_state     = STATE_OPTIONS;
+                        }
+                        else {
+                            // Exit
+                            // Exit the main loop by signalling game_update → false
+                            // We can force the next display‐close or set a flag:
+                            al_rest(0.1);  // let display update
+                            exit(0);
+                        }
+                        break;
+                }
+                // consume the key here
+                break;
+            }
+
+
                 if (game_state == STATE_OPTIONS &&
                     event.mouse.button == 1)
                 {
@@ -381,7 +425,7 @@ void game_init(Game *self)
     // Create first scene
     create_scene(GameScene_L);
 
-    game_state = STATE_PLAYING;
+    game_state = STATE_MAIN_MENU;
 
     // create event queue
     event_queue = al_create_event_queue();
@@ -445,6 +489,29 @@ bool game_update(Game *self)
 // --- game_draw() with aligned, color-changing slider ---
 void game_draw(Game *self)
 {
+
+    if (game_state == STATE_MAIN_MENU) {
+        al_clear_to_color(al_map_rgb(20,20,50));
+        // Draw title
+        al_draw_text(menu_font, al_map_rgb(255,215,0),
+                    WIDTH/2, HEIGHT/4,
+                    ALLEGRO_ALIGN_CENTRE,
+                    "Echoes of the End");
+        // Draw menu items
+        for (int i = 0; i < main_menu_count; i++) {
+            ALLEGRO_COLOR col = (i == main_menu_cursor)
+            ? al_map_rgb(255,200,0)
+            : al_map_rgb(200,200,200);
+            al_draw_text(menu_font, col,
+                        WIDTH/2, HEIGHT/2 + i * 50,
+                        ALLEGRO_ALIGN_CENTRE,
+                        main_menu_items[i]);
+        }
+        al_flip_display();
+        return;
+    }
+
+
     al_clear_to_color(al_map_rgb(100,100,100));
     scene->Draw(scene);
 
