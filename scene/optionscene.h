@@ -14,8 +14,8 @@ typedef struct _OptionsScene {
 } OptionsScene;
 
 Scene *New_OptionsScene(int label);
-void   options_update(Scene *self);
-void   options_draw  (Scene *self);
-void   options_destroy(Scene *self);
+void options_update(Scene *self);
+void options_draw  (Scene *self);
+void options_destroy(Scene *self);
 
 #endif

@@ -3,6 +3,9 @@
 #include <stdbool.h>
 #include <allegro5/allegro_font.h>
 #include <allegro5/allegro_ttf.h>
+#include <allegro5/allegro_audio.h>
+#include <allegro5/allegro_acodec.h>
+
 // variables for global usage
 const double FPS = 60.0;
 const int WIDTH = 1920;
@@ -20,11 +23,11 @@ int brightness = 100;
 
 ALLEGRO_FONT *health_font = NULL; 
 
-float player_x = 0.0f;      // start at world‐origin (0,0)
+float player_x = 0.0f; 
 float player_y = 0.0f;
-float player_speed = 200.0f;    // 200 pixels/second
+float player_speed = 200.0f;  
 
-int player_health = 150;    // initialize the player’s health to 150
+int player_health = 150; 
 bool player_invincible = false;
 int game_score = 0;
 
@@ -32,13 +35,13 @@ float cam_x = 0.0f;
 float cam_y = 0.0f;
 
 int keymap[NUM_BINDS] = {
-    ALLEGRO_KEY_A,      // Left
-    ALLEGRO_KEY_D,      // Right
-    ALLEGRO_KEY_W,      // Up
-    ALLEGRO_KEY_S,      // Down
-    ALLEGRO_KEY_C,      // Invincible cheat
-    ALLEGRO_KEY_F,       // Movement speed cheat
-    ALLEGRO_KEY_QUOTE      // Spawn cheat
+    ALLEGRO_KEY_A,
+    ALLEGRO_KEY_D,
+    ALLEGRO_KEY_W, 
+    ALLEGRO_KEY_S, 
+    ALLEGRO_KEY_C, 
+    ALLEGRO_KEY_F,  
+    ALLEGRO_KEY_QUOTE
 };
 
 float music_volume = 1.0f;

@@ -1,11 +1,11 @@
 // File: scene/game.c
 
 #include "game.h"
-#include "../GAME_ASSERT.h"     // for runtime assertions
-#include <allegro5/allegro.h>           // core Allegro definitions
-#include <allegro5/allegro_image.h>     // al_load_bitmap, al_convert_mask_to_alpha, etc.
-#include <allegro5/allegro_primitives.h> // al_draw_bitmap, al_draw_filled_circle, etc.
-#include <allegro5/allegro_color.h>     // al_unmap_rgb (and al_map_rgb)
+#include "../GAME_ASSERT.h"
+#include <allegro5/allegro.h> 
+#include <allegro5/allegro_image.h>  
+#include <allegro5/allegro_primitives.h> 
+#include <allegro5/allegro_color.h> 
 #include <stdlib.h>
 #include <math.h>
 #include "bats.h"
@@ -19,7 +19,7 @@
 static ALLEGRO_BITMAP *player_frames[PLAYER_FRAME_COUNT] = { NULL };
 static int player_current_frame = 0;
 static float player_anim_timer = 0.0f;
-static const float player_frame_interval = 0.10f;  // seconds per frame
+static const float player_frame_interval = 0.10f; 
 
 static bool player_is_moving(float dx, float dy) {
     return (dx != 0.0f || dy != 0.0f);
@@ -32,11 +32,8 @@ static float attack_timer = 0.0f;
 
 #define DEATH_FRAME_COUNT 8
 ALLEGRO_BITMAP *death_frames[DEATH_FRAME_COUNT] = { NULL };
-// Is the player currently in “dying” state?
 bool player_is_dead = false;
-// How long (so far) we’ve been playing the death animation:
 float death_timer = 0.0f;
-// Which death frame index (0..7) to draw right now:
 int death_current_frame = 0;
 
 const float death_duration = 2.0f;
@@ -49,12 +46,11 @@ const float death_frame_interval = death_duration / (float)DEATH_FRAME_COUNT;
 static ALLEGRO_BITMAP *burger_bitmap = NULL;
 
 typedef struct {
-    int         type;
-    float       world_x, world_y;
-    int         spr_w, spr_h;
+    int type;
+    float world_x, world_y;
+    int spr_w, spr_h;
 } ObjPlacement;
 
-// Paths to the 10 object sprites in assets/tilesets/:
 static const char *object_filenames[MAX_OBJ_TYPES] = {
     "assets/tilesets/fence-1.png",
     "assets/tilesets/fence-2.png",
@@ -64,7 +60,6 @@ static const char *object_filenames[MAX_OBJ_TYPES] = {
 static const int NUM_OBJ_TYPES = 4;
 
 static int I2P_get_objects_in_chunk(I2P_GameScene *gs, int cx, int cy, ObjPlacement *out, int max_slots) {
-    // Now you can safely use `gs->object_tiles[type]` below.
     unsigned int seed = (unsigned int)((cx * 73856093u) ^ (cy * 19349663u));
     srand(seed);
 
@@ -105,8 +100,8 @@ static int I2P_get_objects_in_chunk(I2P_GameScene *gs, int cx, int cy, ObjPlacem
             }
             if (!collide_any) {
                 placed_ok = true;
-                final_wx  = world_x;
-                final_wy  = world_y;
+                final_wx = world_x;
+                final_wy = world_y;
                 placed_cx[placed_count] = final_wx + (spr_w  / 2.0f);
                 placed_cy[placed_count] = final_wy + (spr_h  / 2.0f);
                 placed_r [placed_count] = obj_radius;
@@ -119,11 +114,11 @@ static int I2P_get_objects_in_chunk(I2P_GameScene *gs, int cx, int cy, ObjPlacem
         }
 
         ObjPlacement *op = &out[placed_count - 1];
-        op->type    = type;
+        op->type = type;
         op->world_x = final_wx;
         op->world_y = final_wy;
-        op->spr_w   = spr_w;
-        op->spr_h   = spr_h;
+        op->spr_w = spr_w;
+        op->spr_h = spr_h;
     }
 
     return placed_count;
@@ -133,7 +128,6 @@ static int I2P_get_objects_in_chunk(I2P_GameScene *gs, int cx, int cy, ObjPlacem
 
 static void I2P_generate_and_draw_objects_in_chunk(int cx, int cy, I2P_GameScene *gs) {
     ObjPlacement placements[10];
-    // Now pass `gs` as the first argument:
     int count = I2P_get_objects_in_chunk(gs, cx, cy, placements, 10);
 
     for (int i = 0; i < count; i++) {
@@ -152,7 +146,6 @@ Scene *I2P_NewGameScene(int label) {
     I2P_GameScene *gs = (I2P_GameScene *)calloc(1, sizeof(I2P_GameScene));
     GAME_ASSERT(gs, "Failed to allocate I2P_GameScene\n");
 
-    // 1) Create the base Scene and attach our derived object:
     Scene *scene = New_Scene(label);
     scene->pDerivedObj = gs;
 
@@ -163,7 +156,6 @@ Scene *I2P_NewGameScene(int label) {
     death_timer = 0.0f;
     death_current_frame = 0;
 
-    // 2) Load ground_map.png (grass background) and store its dimensions:
     gs->ground_map = al_load_bitmap("assets/tilesets/ground_map.png");
     GAME_ASSERT(gs->ground_map, "Could not load assets/tilesets/ground_map.png\n");
     gs->ground_w = al_get_bitmap_width(gs->ground_map);
@@ -172,7 +164,6 @@ Scene *I2P_NewGameScene(int label) {
     for (int i = 0; i < NUM_OBJ_TYPES; i++) {
         ALLEGRO_BITMAP *bmp = al_load_bitmap(object_filenames[i]);
         GAME_ASSERT(bmp, "Could not load %s\n", object_filenames[i]);
-        // Store in our array:
         gs->object_tiles[i] = bmp;
     }
 
@@ -205,9 +196,8 @@ Scene *I2P_NewGameScene(int label) {
     cam_x = player_x - (WIDTH  / 2.0f);
     cam_y = player_y - (HEIGHT / 2.0f);
 
-    // 5) Hook up the update/draw/destroy callbacks:
-    scene->Update  = I2P_game_scene_update;
-    scene->Draw    = I2P_game_scene_draw;
+    scene->Update = I2P_game_scene_update;
+    scene->Draw = I2P_game_scene_draw;
     scene->Destroy = I2P_game_scene_destroy;
 
     return scene;
@@ -230,7 +220,6 @@ static bool I2P_check_collision(float cx, float cy, I2P_GameScene *gs) {
 
     for (int cyunk = chunk_min_y; cyunk <= chunk_max_y; cyunk++) {
         for (int cxunk = chunk_min_x; cxunk <= chunk_max_x; cxunk++) {
-            // Pass `gs` first:
             int count = I2P_get_objects_in_chunk(gs, cxunk, cyunk, placements, 10);
             for (int i = 0; i < count; i++) {
                 ObjPlacement *op = &placements[i];
@@ -241,7 +230,6 @@ static bool I2P_check_collision(float cx, float cy, I2P_GameScene *gs) {
                 float sum_r = player_radius + obj_radius;
                 float sum_r2 = sum_r * sum_r;
 
-                // Broad‐phase AABB check
                 if (obj_cx - sum_r > pmax_x) continue;
                 if (obj_cx + sum_r < pmin_x) continue;
                 if (obj_cy - sum_r > pmax_y) continue;
@@ -263,7 +251,6 @@ void I2P_game_scene_update(Scene *self) {
     (void)self;
     float dt = 1.0f / FPS;
 
-
     if (player_is_dead) {
         death_timer += dt;
 
@@ -281,14 +268,12 @@ void I2P_game_scene_update(Scene *self) {
         return;
     }
 
-    // 1) Movement delta from input
     float dx = 0.0f, dy = 0.0f;
-    if (key_state[ALLEGRO_KEY_W] || key_state[ALLEGRO_KEY_UP])    dy -= player_speed * dt;
-    if (key_state[ALLEGRO_KEY_S] || key_state[ALLEGRO_KEY_DOWN])  dy += player_speed * dt;
-    if (key_state[ALLEGRO_KEY_A] || key_state[ALLEGRO_KEY_LEFT])  dx -= player_speed * dt;
+    if (key_state[ALLEGRO_KEY_W] || key_state[ALLEGRO_KEY_UP]) dy -= player_speed * dt;
+    if (key_state[ALLEGRO_KEY_S] || key_state[ALLEGRO_KEY_DOWN]) dy += player_speed * dt;
+    if (key_state[ALLEGRO_KEY_A] || key_state[ALLEGRO_KEY_LEFT]) dx -= player_speed * dt;
     if (key_state[ALLEGRO_KEY_D] || key_state[ALLEGRO_KEY_RIGHT]) dx += player_speed * dt;
 
-    // 2) Normalize diagonal movement
     if (dx != 0.0f || dy != 0.0f) {
         float len = sqrtf(dx*dx + dy*dy);
         if (len > 0.0f) {
@@ -325,7 +310,6 @@ void I2P_game_scene_update(Scene *self) {
             player_current_frame = (player_current_frame + 1) % PLAYER_FRAME_COUNT;
         }
     } else {
-        // If not moving, go back to frame 0 (idle) and reset timer
         player_current_frame = 0;
         player_anim_timer = 0.0f;
     }
@@ -340,17 +324,14 @@ void I2P_game_scene_update(Scene *self) {
     }
 
     ElementVec allEle = _Get_all_elements(self);
-    //     6b) Run each element’s Update()
     for (int i = 0; i < allEle.len; i++) {
         Elements *ele = allEle.arr[i];
-        ele->Update(ele);        // e.g. Projectile_update(ele)
+        ele->Update(ele); 
     }
-    //     6c) Run each element’s Interact() (handles collisions, deletions)
     for (int i = 0; i < allEle.len; i++) {
         Elements *ele = allEle.arr[i];
         ele->Interact(ele);
     }
-    //     6d) Remove any elements flagged for deletion
     for (int i = 0; i < allEle.len; i++) {
         Elements *ele = allEle.arr[i];
         if (ele->dele)
@@ -367,7 +348,6 @@ static bool is_burger_eaten(I2P_GameScene *gs, int cx, int cy) {
     return false;
 }
 
-// record that the burger in chunk (cx,cy) was eaten
 static void mark_burger_eaten(I2P_GameScene *gs, int cx, int cy) {
     if (gs->eaten_count >= gs->eaten_cap) {
         int newcap = gs->eaten_cap ? gs->eaten_cap * 2 : 16;
@@ -375,7 +355,7 @@ static void mark_burger_eaten(I2P_GameScene *gs, int cx, int cy) {
                                    newcap * sizeof *gs->eaten_burgers);
         gs->eaten_cap = newcap;
     }
-    // record the new eaten‐burger
+
     gs->eaten_burgers[gs->eaten_count].cx = cx;
     gs->eaten_burgers[gs->eaten_count].cy = cy;
     gs->eaten_count++;
@@ -386,7 +366,6 @@ void I2P_game_scene_draw(Scene *self) {
 
     al_clear_to_color(al_map_rgb(0, 0, 0));
 
-    // Tile the ground_map:
     int first_tile_x = floor(cam_x / (float)gs->ground_w);
     int first_tile_y = floor(cam_y / (float)gs->ground_h);
     int tiles_across = (WIDTH  / gs->ground_w) + 2;
@@ -402,7 +381,6 @@ void I2P_game_scene_draw(Scene *self) {
         }
     }
 
-    // Draw objects in each visible 512×512 chunk:
     int chunk_min_x = floor((cam_x) / (float)CHUNK_SIZE) - 1;
     int chunk_max_x = floor((cam_x + WIDTH) / (float)CHUNK_SIZE) + 1;
     int chunk_min_y = floor((cam_y) / (float)CHUNK_SIZE) - 1;
@@ -410,41 +388,33 @@ void I2P_game_scene_draw(Scene *self) {
 
     for (int cy = chunk_min_y; cy <= chunk_max_y; cy++) {
         for (int cx = chunk_min_x; cx <= chunk_max_x; cx++) {
-            // 1) still draw your scenery objects…
             I2P_generate_and_draw_objects_in_chunk(cx, cy, gs);
 
-            // only one burger per 5×5 grid, as before...
             int mx = ((cx % CHUNKS_PER_BURGER) + CHUNKS_PER_BURGER) % CHUNKS_PER_BURGER;
             int my = ((cy % CHUNKS_PER_BURGER) + CHUNKS_PER_BURGER) % CHUNKS_PER_BURGER;
             if (mx != 0 || my != 0) continue;
 
-            // skip if already eaten
             if (is_burger_eaten(gs, cx, cy)) continue;
 
-            // 3) seed & pick exactly one spot in this chunk
             unsigned int seed = (unsigned int)((cx * 73856093u) ^ (cy * 19349663u)) + 0xBEEF;
             srand(seed);
             float local_x = (rand() / (float)RAND_MAX) * CHUNK_SIZE;
             float local_y = (rand() / (float)RAND_MAX) * CHUNK_SIZE;
 
-            // 4) world‐space coords
             float world_x = cx * CHUNK_SIZE + local_x;
             float world_y = cy * CHUNK_SIZE + local_y;
 
-            // 5) draw it
             int bw = al_get_bitmap_width(burger_bitmap);
             int bh = al_get_bitmap_height(burger_bitmap);
             float sx = world_x - cam_x - bw*0.5f;
             float sy = world_y - cam_y - bh*0.5f;
             al_draw_bitmap(burger_bitmap, sx, sy, 0);
 
-            // 6) collision & heal
             float pr = 16.0f;
             float br = (bw < bh ? bw : bh)*0.5f/2.0f;
             float dx = world_x - player_x;
             float dy = world_y - player_y;
             if (dx*dx + dy*dy <= (pr + br)*(pr + br)) {
-                // heal
                 player_health = min(player_health + BURGER_HEAL_AMOUNT,
                                     PLAYER_MAX_HEALTH);
                 mark_burger_eaten(gs, cx, cy);
@@ -470,28 +440,21 @@ void I2P_game_scene_draw(Scene *self) {
     }
 
     {
-        // Player’s screen‐space center:
         float px = player_x - cam_x;
         float py = player_y - cam_y;
 
-        // Facing unit vector:
         float dx = player_facing_dx;
         float dy = player_facing_dy;
 
-        // A perpendicular vector to (dx,dy):
         float perp_x = -dy;
         float perp_y = dx;
 
-        // How far out for the “tip”:
         float tip_dist  = 12.0f;
-        // How wide the base:
         float base_dist = 4.0f;
 
-        // Tip of the triangle:
         float tip_x = px + dx * tip_dist;
         float tip_y = py + dy * tip_dist;
 
-        // Two base corners (slightly behind the player):
         float back_offset = 2.0f;
         float base1_x = px + perp_x * base_dist - dx * back_offset;
         float base1_y = py + perp_y * base_dist - dy * back_offset;

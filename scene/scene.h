@@ -29,7 +29,6 @@ struct _Scene
     bool scene_end;
     int ele_num;
     EPNode *ele_list[MAX_ELEMENT];
-    // interface for function
     fptrUpdate Update;
     fptrDraw Draw;
     fptrDestroy Destroy;

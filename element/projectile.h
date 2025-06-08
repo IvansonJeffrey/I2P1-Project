@@ -8,7 +8,7 @@
 */
 typedef struct _Projectile
 {
-    float x, y;          
+    float x, y;
     float dx, dy;
     Shape *hitbox; 
 } Projectile;

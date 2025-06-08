@@ -13,6 +13,7 @@ typedef enum EleType
     Character_L,
     Projectile_L,
 } EleType;
+
 typedef struct _GameScene
 {
     ALLEGRO_BITMAP *background;

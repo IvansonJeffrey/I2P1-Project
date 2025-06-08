@@ -2,7 +2,7 @@
 #define BATS_H_INCLUDED
 
 #include <allegro5/allegro.h>
-#include "../global.h"   // for player_x, player_y, cam_x, cam_y, FPS
+#include "../global.h"
 
 #define MAX_BATS 150
 #define SAFE_RADIUS 200.0f
@@ -17,8 +17,8 @@ extern float bat_anim_timer;
 extern int bat_current_frame;  
 
 typedef struct {
-    float x, y;    // world coordinates
-    float speed;   // pixels per second
+    float x, y;
+    float speed;
 } Bat;
 
 void bats_init(void);

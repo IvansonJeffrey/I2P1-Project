@@ -86,7 +86,6 @@ Scene *New_Scene(int label)
 {
     Scene *pObj;
     pObj = (Scene *)malloc(sizeof(Scene));
-    // setting object member
     pObj->label = label;
     pObj->scene_end = false;
     pObj->ele_num = 0;

@@ -14,7 +14,7 @@
 #define MAX_ELEMENT 100
 #define min(x, y) ((x) > (y) ? (y) : (x))
 #define max(x, y) ((x) < (y) ? (y) : (x))
-// note that you can't assign initial value for extern variable!
+
 extern const double FPS;
 extern const int WIDTH;
 extern const int HEIGHT;
@@ -29,18 +29,18 @@ extern bool debug_mode;
 extern int brightness;
 extern ALLEGRO_DISPLAY *display;
 
-extern ALLEGRO_FONT  *health_font;
+extern ALLEGRO_FONT *health_font;
 
-extern float player_x;      // player’s world X position
-extern float player_y;      // player’s world Y position
-extern float player_speed;  // pixels per second
+extern float player_x;
+extern float player_y; 
+extern float player_speed; 
 
-extern int  player_health; // player’s health (starts at 150)
+extern int  player_health;
 extern bool player_invincible; 
 extern int game_score;
 
-extern float cam_x;         // camera’s top-left X in world coords
-extern float cam_y;         // camera’s top-left Y in world coords
+extern float cam_x;
+extern float cam_y;
 
 extern ALLEGRO_BITMAP *death_frames[];
 extern bool player_is_dead;
@@ -52,10 +52,8 @@ extern const float death_frame_interval;
 extern ALLEGRO_FONT *menu_font;
 extern float music_volume;
 
-// Tile / chunk sizes:
-#define CHUNK_SIZE    512    // each “chunk” is 512×512 pixels
+#define CHUNK_SIZE    512  
 
-// Number of object types (fences, pillars, plants, trees):
 #define MAX_OBJ_TYPES 10
 
 

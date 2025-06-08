@@ -10,7 +10,8 @@ typedef enum SceneType
     KeyBindScene_L, 
     Exit_L
 } SceneType;
-void create_scene(SceneType);
 
+void create_scene(SceneType);
+void add_element_to_scene(Scene *scene, Elements *e);
 
 #endif

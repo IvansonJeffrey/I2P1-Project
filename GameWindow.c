@@ -34,16 +34,10 @@ typedef enum {
 } GameState;
 
 static GameState game_state = STATE_MAIN_MENU;
-static bool music_muted = false;
 static int options_cursor = 0;
 static const int num_options = 3;
-static const char* options_text[3] = {
-    "Resume",
-    "Music",
-    "Exit"
-};
 
-static bool  slider_dragging = false;
+static bool slider_dragging = false;
 
 ALLEGRO_FONT *menu_font = NULL;
 
@@ -77,7 +71,6 @@ void execute(Game *self)
             break;
 
             case ALLEGRO_EVENT_DISPLAY_CLOSE:
-                // stop game
                 run = false;
                 break;
 
@@ -132,7 +125,6 @@ void execute(Game *self)
                     break;
                 }
 
-                // → Enter pause/options
                 if (game_state == STATE_PLAYING &&
                     event.keyboard.keycode == ALLEGRO_KEY_ESCAPE)
                 {
@@ -140,12 +132,10 @@ void execute(Game *self)
                     options_cursor = 0;
                     break;
                 }
-                // → Navigation & actions in options
                 else if (game_state == STATE_OPTIONS)
                 {
                     switch (event.keyboard.keycode)
                     {
-                        // Move cursor up
                         case ALLEGRO_KEY_UP:
                         case ALLEGRO_KEY_W:
                             options_cursor =
@@ -153,7 +143,6 @@ void execute(Game *self)
                                 % num_options;
                             break;
 
-                        // Move cursor down
                         case ALLEGRO_KEY_DOWN:
                         case ALLEGRO_KEY_S:
                             options_cursor =
@@ -161,15 +150,12 @@ void execute(Game *self)
                                 % num_options;
                             break;
 
-                        // Select / toggle
                         case ALLEGRO_KEY_ENTER:
                         case ALLEGRO_KEY_PAD_ENTER:
                             if (options_cursor == 0) {
-                                // Resume
                                 game_state = STATE_PLAYING;
                             }
                             else if (options_cursor == 1) {
-                                // Mute/unmute toggle
                                 if (music_volume > 0.0f) {
                                     music_volume = 0.0f;
                                 } else {
@@ -181,12 +167,10 @@ void execute(Game *self)
                                 );
                             }
                             else {
-                                // Exit to main menu
                                 game_state = STATE_MAIN_MENU;
                             }
                             break;
 
-                        // Nudge slider left
                         case ALLEGRO_KEY_LEFT:
                         case ALLEGRO_KEY_A:
                             if (options_cursor == 1) {
@@ -200,7 +184,6 @@ void execute(Game *self)
                             }
                             break;
 
-                        // Nudge slider right
                         case ALLEGRO_KEY_RIGHT:
                         case ALLEGRO_KEY_D:
                             if (options_cursor == 1) {
@@ -241,14 +224,10 @@ void execute(Game *self)
                     } else {
                         player_speed = cheat_original_speed;
                     }
-                    printf("*** Cheat: Speed %s ***\n",
-                           cheat_speed_active ? "ON" : "OFF",
-                           cheat_original_speed,
-                           player_speed);
+                    printf("*** Cheat: Speed %s ***\n", cheat_speed_active ? "ON" : "OFF");
                 }
 
                 else if (event.keyboard.keycode == ALLEGRO_KEY_4) {
-                    // Instant–death cheat: kill the player immediately
                     player_health    = 0;
                     player_is_dead   = true;
                     printf("*** Cheat: Instant Death! ***\n");
@@ -262,12 +241,8 @@ void execute(Game *self)
             case ALLEGRO_EVENT_MOUSE_AXES:
                 if (slider_dragging) {
                     int mx = event.mouse.x;
-                    // same slider bounds calc as above
-                    const float panel_w = 400, panel_h = 240;
+                    const float panel_w = 400;
                     float panel_x = (WIDTH - panel_w)/2;
-                    float panel_y = (HEIGHT - panel_h)/2;
-                    const float line_h = 50;
-                    float y1 = panel_y + 60 + line_h;
 
                     const char *label = "Music";
                     float lx = panel_x + 80;
@@ -294,7 +269,6 @@ void execute(Game *self)
                     int mx = event.mouse.x;
                     int my = event.mouse.y;
 
-                    // Panel & rows metrics
                     const float panel_w = 400, panel_h = 240;
                     float panel_x = (WIDTH - panel_w)/2;
                     float panel_y = (HEIGHT - panel_h)/2;
@@ -303,7 +277,6 @@ void execute(Game *self)
                     float y1 = y0 + line_h;
                     float y2 = y1 + line_h;
 
-                    // 1) Resume row
                     if (mx >= panel_x && mx <= panel_x + panel_w &&
                         my >= y0 - line_h/2 &&
                         my <= y0 + line_h/2)
@@ -313,14 +286,12 @@ void execute(Game *self)
                         break;
                     }
 
-                    // 2) Music row (toggle or drag)
                     if (mx >= panel_x && mx <= panel_x + panel_w &&
                         my >= y1 - line_h/2 &&
                         my <= y1 + line_h/2)
                     {
                         options_cursor = 1;
 
-                        // Slider bounds
                         const char *label = "Music";
                         float lx = panel_x + 80;
                         float label_w = al_get_text_width(menu_font, label);
@@ -331,7 +302,6 @@ void execute(Game *self)
                           y1 + (al_get_font_line_height(menu_font)/2.0f)
                           - (sh/2.0f);
 
-                        // Click inside track → begin drag
                         if (mx >= sx && mx <= sx + sw &&
                             my >= sy && my <= sy + sh)
                         {
@@ -344,7 +314,6 @@ void execute(Game *self)
                             );
                         }
                         else {
-                            // Click in row → toggle mute
                             if (music_volume > 0.0f)
                                 music_volume = 0.0f;
                             else
@@ -357,7 +326,6 @@ void execute(Game *self)
                         break;
                     }
 
-                    // 3) Exit row
                     if (mx >= panel_x && mx <= panel_x + panel_w &&
                         my >= y2 - line_h/2 &&
                         my <= y2 + line_h/2)
@@ -367,7 +335,6 @@ void execute(Game *self)
                         break;
                     }
                 }
-                // … any other mouse‐down logic …
                 break;
 
             case ALLEGRO_EVENT_MOUSE_BUTTON_UP:
@@ -389,36 +356,26 @@ void game_init(Game *self)
 {
     printf("Game Initializing...\n");
     GAME_ASSERT(al_init(), "failed to initialize allegro.");
-    // initialize allegro addons
     bool addon_init = true;
     addon_init &= al_init_primitives_addon();
-    addon_init &= al_init_font_addon();   // initialize the font addon
-    addon_init &= al_init_ttf_addon();    // initialize the ttf (True Type Font) addon
+    addon_init &= al_init_font_addon();
+    addon_init &= al_init_ttf_addon();
 
     health_font = al_load_ttf_font("assets/font/PixelPurl.ttf", 40, 0);
-    GAME_ASSERT(health_font, "Failed to load health font at assets/font/PixelPurl.ttf\n");
+    menu_font = al_load_ttf_font("assets/font/PixelPurl.ttf", 50, 0); 
 
-    menu_font = al_load_ttf_font("assets/font/PixelPurl.ttf", 28, 0);
-    GAME_ASSERT(menu_font, "Failed to load menu font at assets/font/PixelPurl.ttf");    
-
-    addon_init &= al_init_image_addon();  // initialize the image addon
-    addon_init &= al_init_acodec_addon(); // initialize acodec addon
-    addon_init &= al_install_keyboard();  // install keyboard event
-    addon_init &= al_install_mouse();     // install mouse event
-    addon_init &= al_install_audio();     // install audio event
-    GAME_ASSERT(addon_init, "failed to initialize allegro addons.");
+    addon_init &= al_init_image_addon(); 
+    addon_init &= al_init_acodec_addon();
+    addon_init &= al_install_keyboard();
+    addon_init &= al_install_mouse();
+    addon_init &= al_install_audio(); 
 
     al_reserve_samples(1);
 
-    // Load your BGM file (adjust path as needed)
     ALLEGRO_SAMPLE *bgm_sample = al_load_sample("assets/sound/stagebgm.mp3");
-    GAME_ASSERT(bgm_sample,
-        "Failed to load BGM: assets/audio/stagebgm.mp3");
 
-    // Start playing in a loop (volume=1.0, pan=0.0, speed=1.0)
     al_play_sample(bgm_sample, 1.0f, 0.0f, 1.0f, ALLEGRO_PLAYMODE_LOOP, NULL);  
 
-    // Create display
     self->display = al_create_display(WIDTH, HEIGHT);
     GAME_ASSERT(self->display, "failed to create display.");
     display = self->display;
@@ -429,10 +386,8 @@ void game_init(Game *self)
 
     game_state = STATE_MAIN_MENU;
 
-    // create event queue
     event_queue = al_create_event_queue();
     GAME_ASSERT(event_queue, "failed to create event queue.");
-    // Initialize Allegro settings
 
     ALLEGRO_MONITOR_INFO mi;
     al_get_monitor_info(0, &mi);  
@@ -444,12 +399,11 @@ void game_init(Game *self)
     int win_y = mi.y1 + (screen_h - HEIGHT) / 2;
     al_set_window_position(self->display, win_x, win_y);
 
-    //al_set_window_position(self->display, 0, 0);
     al_set_window_title(self->display, self->title);
     // Register event
-    al_register_event_source(event_queue, al_get_display_event_source(self->display)); // register display event
-    al_register_event_source(event_queue, al_get_keyboard_event_source());             // register keyboard event
-    al_register_event_source(event_queue, al_get_mouse_event_source());                // register mouse event
+    al_register_event_source(event_queue, al_get_display_event_source(self->display));
+    al_register_event_source(event_queue, al_get_keyboard_event_source());
+    al_register_event_source(event_queue, al_get_mouse_event_source());
     // register timer event
     fps = al_create_timer(1.0 / FPS);
     al_register_event_source(event_queue, al_get_timer_event_source(fps));
@@ -488,18 +442,16 @@ bool game_update(Game *self)
     return true;
 }
 
-// --- game_draw() with aligned, color-changing slider ---
 void game_draw(Game *self)
 {
 
     if (game_state == STATE_MAIN_MENU) {
         al_clear_to_color(al_map_rgb(20,20,50));
-        // Draw title
         al_draw_text(menu_font, al_map_rgb(255,215,0),
                     WIDTH/2, HEIGHT/4,
                     ALLEGRO_ALIGN_CENTRE,
                     "Echoes of the End");
-        // Draw menu items
+
         for (int i = 0; i < main_menu_count; i++) {
             ALLEGRO_COLOR col = (i == main_menu_cursor)
             ? al_map_rgb(255,200,0)
@@ -518,11 +470,9 @@ void game_draw(Game *self)
     scene->Draw(scene);
 
     if (game_state == STATE_OPTIONS) {
-        // 1) backdrop
         al_draw_filled_rectangle(0, 0, WIDTH, HEIGHT,
                                  al_map_rgba_f(0,0,0,0.6f));
 
-        // 2) panel
         const float panel_w = 400, panel_h = 240;
         const float panel_x = (WIDTH - panel_w) / 2;
         const float panel_y = (HEIGHT - panel_h) / 2;
@@ -533,7 +483,6 @@ void game_draw(Game *self)
             al_map_rgb(20,20,60)
         );
 
-        // 3) header
         al_draw_text(
             menu_font,
             al_map_rgb(255,255,255),
@@ -542,13 +491,11 @@ void game_draw(Game *self)
             "PAUSED"
         );
 
-        // row Y positions
         const float line_h = 50;
         const float y0 = panel_y + 60;
         const float y1 = y0 + line_h;
         const float y2 = y1 + line_h;
 
-        // 4) Resume
         {
             ALLEGRO_COLOR col = (options_cursor==0)
                 ? al_map_rgb(255,200,0)
@@ -559,22 +506,18 @@ void game_draw(Game *self)
                          "Resume");
         }
 
-        // 5) Music + slider
         {
             const char *label = "Music";
             ALLEGRO_COLOR labcol = (options_cursor==1)
                 ? al_map_rgb(255,200,0)
                 : al_map_rgb(200,200,200);
-            // fixed label X
             float lx = panel_x + 100;
             float ly = y1;
             al_draw_text(menu_font, labcol, lx, ly, 0, label);
 
             const float sw = 60, sh = 16;
             const float right_margin = 90; 
-            // slider flush-right inside the panel
             float sx = panel_x + panel_w - sw - right_margin;
-            // vertical center on the text baseline
             float fh = al_get_font_line_height(menu_font);
             float sy = ly + (fh/2.0f) - (sh/2.0f);
 
@@ -597,7 +540,7 @@ void game_draw(Game *self)
             al_draw_filled_circle(kx, ky, kr,
                                 al_map_rgb(255,255,255));
         }
-        // 6) Exit
+
         {
             ALLEGRO_COLOR col = (options_cursor==2)
                 ? al_map_rgb(255,200,0)
@@ -611,13 +554,11 @@ void game_draw(Game *self)
     if (game_state == STATE_ABOUT) {
        al_clear_to_color(al_map_rgb(20,20,50));
 
-       // Header
        al_draw_text(menu_font, al_map_rgb(255,215,0),
                     WIDTH/2, HEIGHT/4,
                     ALLEGRO_ALIGN_CENTRE,
                    "About Echoes of the End");
 
-       // Synopsis lines
        al_draw_text(menu_font, al_map_rgb(200,200,200),
                     WIDTH/2, HEIGHT/2 - 40,
                     ALLEGRO_ALIGN_CENTRE,
@@ -627,13 +568,11 @@ void game_draw(Game *self)
                     ALLEGRO_ALIGN_CENTRE,
                     "Fight through the darkness. Discover the secrets.");
 
-       // Credits
        al_draw_text(menu_font, al_map_rgb(200,200,200),
                     WIDTH/2, HEIGHT/2 + 40,
                     ALLEGRO_ALIGN_CENTRE,
                     "Created by Group 30 (Ghiffar & Jeffrey)");
 
-       // Prompt to return
        al_draw_text(menu_font, al_map_rgb(200,200,200),
                     WIDTH/2, HEIGHT - 50,
                     ALLEGRO_ALIGN_CENTRE,
@@ -648,7 +587,6 @@ void game_draw(Game *self)
 
 void game_destroy(Game *self)
 {
-    // Make sure you destroy all things
     al_destroy_event_queue(event_queue);
     al_destroy_display(self->display);
     scene->Destroy(scene);

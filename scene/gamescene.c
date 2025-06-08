@@ -62,7 +62,6 @@ void game_scene_update(Scene *self)
 }
 void game_scene_draw(Scene *self)
 {
-    al_clear_to_color(al_map_rgb(0, 0, 0));
     GameScene *gs = ((GameScene *)(self->pDerivedObj));
     al_draw_bitmap(gs->background, 0, 0, 0);
     ElementVec allEle = _Get_all_elements(self);

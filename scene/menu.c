@@ -101,7 +101,6 @@ void menu_draw(Scene *self)
                      ALLEGRO_ALIGN_CENTRE,
                      menu_items[i]);
     }
-    // optional: draw a box around the selected item
     float y = m->highlight_y;
     al_draw_rectangle(
     m->title_x - 120, 
@@ -111,8 +110,6 @@ void menu_draw(Scene *self)
     al_map_rgb(255,255,255), 2
     );
 
-    // then draw text (you can center based on each item’s fixed position,
-    // or even lerp the text color similarly if you want a fade effect)
     for(int i=0;i<MENU_COUNT;i++)
     {
         float item_y = m->title_y + i*MENU_SPACING;

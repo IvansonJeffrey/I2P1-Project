@@ -17,7 +17,6 @@ void game_destroy(Game *);
 struct _GAME
 {
     const char *title;
-    // ALLEGRO Variables
     ALLEGRO_DISPLAY *display;
     fptrGameExecute execute;
     fptrGameInit game_init;

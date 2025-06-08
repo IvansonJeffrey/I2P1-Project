@@ -27,7 +27,6 @@ Scene *New_KeyBindScene(int label) {
     k->selected = 0;
     k->waiting_for_key = false;
 
-    // initialize defaults:
     k->keymap[0] = ALLEGRO_KEY_W;
     k->keymap[1] = ALLEGRO_KEY_S;
     k->keymap[2] = ALLEGRO_KEY_A;
@@ -36,9 +35,9 @@ Scene *New_KeyBindScene(int label) {
     k->keymap[5] = 0; // Back
 
     scn->pDerivedObj = k;
-    scn->Update      = keybind_update;
-    scn->Draw        = keybind_draw;
-    scn->Destroy     = keybind_destroy;
+    scn->Update = keybind_update;
+    scn->Draw = keybind_draw;
+    scn->Destroy = keybind_destroy;
     return scn;
 }
 
@@ -46,15 +45,13 @@ void keybind_update(Scene *self) {
     KeyBindScene *k = self->pDerivedObj;
 
     if (k->waiting_for_key) {
-        // look for *any* key-down event:
         if (event.type == ALLEGRO_EVENT_KEY_DOWN) {
             k->keymap[k->selected] = event.keyboard.keycode;
-            k->waiting_for_key     = false;
+            k->waiting_for_key = false;
         }
         return;
     }
 
-    // navigate
     static bool up_prev, dn_prev;
     bool up = key_state[ALLEGRO_KEY_UP],
          dn = key_state[ALLEGRO_KEY_DOWN];
@@ -62,14 +59,11 @@ void keybind_update(Scene *self) {
     if (dn && !dn_prev)   k->selected = (k->selected + 1) % ACT_COUNT;
     up_prev = up; dn_prev = dn;
 
-    // Enter
     if (key_state[ALLEGRO_KEY_ENTER]) {
         if (k->selected == ACT_COUNT-1) {
-            // “Back” → return to Options
             self->scene_end = true;
             window = OptionsScene_L;
         } else {
-            // begin waiting for key
             k->waiting_for_key = true;
         }
     }
@@ -85,7 +79,6 @@ void keybind_draw(Scene *self) {
             ? al_map_rgb(255,255,0)
             : al_map_rgb(200,200,200);
 
-        // draw “Action — KeyName”
         char buf[64];
         if (i < ACT_COUNT-1) {
             const char *name = al_keycode_to_name(k->keymap[i]);
